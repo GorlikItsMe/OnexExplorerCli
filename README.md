@@ -10,7 +10,10 @@
 
 # OnexExplorerCli
 
-OnexExplorer is an open-source tool for unpacking and repacking .NOS data files from game called NosTale. It can open almost all .NOS files and allows to view the Content, export and replace it and even add own Content to them. Its based on [OnexExplorer](https://github.com/Pumba98/OnexExplorer) that has the same capabilities. Huge thanks for [OnexExplorer](https://github.com/Pumba98/)'s work.
+OnexExplorer is an open-source tool for unpacking and repacking .NOS data files from the game NosTale. It can open almost all .NOS files, allowing you to view, export, replace, and even add your own content. It's based on [OnexExplorer](https://github.com/Pumba98/OnexExplorer) which has the same capabilities. Huge thanks to Pumba98 for their work.
+
+> [!WARNING]  
+> This project is a work-in-progress and is not finished yet. Everything can change. Check ## Features to see what actually works
 
 ## Features
 
