@@ -1,0 +1,30 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Run Greeter",
+      "type": "cppdbg",
+      "request": "launch",
+      "program": "${workspaceFolder}/build/standalone/Greeter",
+      "args": ["--name", "World", "--lang", "en"],
+      "cwd": "${workspaceFolder}",
+      "preLaunchTask": "Build Greeter"
+    },
+    {
+      "name": "Debug Tests",
+      "type": "cppdbg",
+      "request": "launch",
+      "program": "${workspaceFolder}/build/test/GreeterTests",
+      "args": [],
+      "cwd": "${workspaceFolder}",
+      "preLaunchTask": "Build Tests",
+      "setupCommands": [
+        {
+          "description": "Enable pretty-printing for gdb",
+          "text": "-enable-pretty-printing",
+          "ignoreFailures": true
+        }
+      ]
+    }
+  ]
+}
