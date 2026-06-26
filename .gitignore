@@ -1,3 +1,4 @@
 /build*
 /cpm_modules
 .DS_Store
+compile_commands.json

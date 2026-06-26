@@ -2,30 +2,30 @@
 
 #include <string>
 
-namespace greeter {
+namespace onexexplorer {
 
-  /**  Language codes to be used with the Greeter class */
+  /** Language codes supported by OnexExplorer. */
   enum class LanguageCode { EN, DE, ES, FR };
 
   /**
-   * @brief A class for saying hello in multiple languages
+   * @brief A class for producing localized greeting strings.
    */
-  class Greeter {
+  class OnexExplorer {
     std::string name;
 
   public:
     /**
-     * @brief Creates a new greeter
+     * @brief Creates a new instance.
      * @param name the name to greet
      */
-    Greeter(std::string name);
+    OnexExplorer(std::string name);
 
     /**
-     * @brief Creates a localized string containing the greeting
+     * @brief Creates a localized string containing the greeting.
      * @param lang the language to greet in
      * @return a string containing the greeting
      */
     std::string greet(LanguageCode lang = LanguageCode::EN) const;
   };
 
-}  // namespace greeter
+}  // namespace onexexplorer
