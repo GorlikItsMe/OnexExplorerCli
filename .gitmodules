@@ -1,0 +1,3 @@
+[submodule "external/OnexExplorer"]
+	path = external/OnexExplorer
+	url = https://github.com/Pumba98/OnexExplorer.git
