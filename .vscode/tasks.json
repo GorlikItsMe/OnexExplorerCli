@@ -5,22 +5,33 @@
       "label": "Build Greeter",
       "type": "shell",
       "command": "cmake --build build --target GreeterStandalone",
-      "group": {"kind": "build"},
-      "problemMatcher": ["$gcc"],
-      "dependsOn": ["Configure CMake"]
+      "group": {
+        "kind": "build"
+      },
+      "problemMatcher": [
+        "$gcc"
+      ],
+      "dependsOn": [
+        "Configure CMake"
+      ]
     },
     {
       "label": "Build Tests",
       "type": "shell",
       "command": "cmake --build build --target GreeterTests",
       "group": "build",
-      "problemMatcher": ["$gcc"],
-      "dependsOn": ["Configure CMake"]
+      "problemMatcher": [
+        "$gcc"
+      ],
+      "dependsOn": [
+        "Configure CMake"
+      ]
     },
     {
       "label": "Configure CMake",
       "type": "shell",
-      "command": "cmake -S all -B build -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DCMAKE_BUILD_TYPE=Debug",
+      "command":
+          "cmake -S all -B build -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DCMAKE_BUILD_TYPE=Debug",
       "group": "build",
       "problemMatcher": []
     }

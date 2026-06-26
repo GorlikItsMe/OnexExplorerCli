@@ -6,7 +6,12 @@
       "type": "cppdbg",
       "request": "launch",
       "program": "${workspaceFolder}/build/standalone/Greeter",
-      "args": ["--name", "World", "--lang", "en"],
+      "args": [
+        "--name",
+        "World",
+        "--lang",
+        "en"
+      ],
       "cwd": "${workspaceFolder}",
       "preLaunchTask": "Build Greeter"
     },
