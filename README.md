@@ -100,11 +100,22 @@ cmake --build build --target GenerateDocs
 
 ## FAQ
 
-To be added
+> VS Code / clangd shows "file not found" errors for project headers
 
-> Question
+After building, generate a `compile_commands.json` and symlink it to the project root so clangd can resolve include paths:
 
-Answer
+```bash
+cmake -S standalone -B build/standalone -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
+ln -sf build/standalone/compile_commands.json compile_commands.json
+```
+
+Then restart clangd in VS Code (`Ctrl+Shift+P` → "clangd: Restart").
+
+If using the `all` build, point to that instead:
+```bash
+cmake -S all -B build -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
+ln -sf build/compile_commands.json compile_commands.json
+```
 
 ## Related projects and alternatives
 
