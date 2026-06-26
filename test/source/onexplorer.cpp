@@ -3,7 +3,7 @@
 #include <onexexplorer/version.h>
 
 #include <string>
-
+#include <string_view>
 TEST_CASE("OnexExplorer") {
   using namespace onexexplorer;
 
