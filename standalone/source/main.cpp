@@ -1,5 +1,5 @@
-#include <greeter/greeter.h>
-#include <greeter/version.h>
+#include <onexexplorer/onexplorer.h>
+#include <onexexplorer/version.h>
 
 #include <cxxopts.hpp>
 #include <iostream>
@@ -7,14 +7,15 @@
 #include <unordered_map>
 
 auto main(int argc, char** argv) -> int {
-  const std::unordered_map<std::string, greeter::LanguageCode> languages{
-      {"en", greeter::LanguageCode::EN},
-      {"de", greeter::LanguageCode::DE},
-      {"es", greeter::LanguageCode::ES},
-      {"fr", greeter::LanguageCode::FR},
+  const std::unordered_map<std::string, onexexplorer::LanguageCode> languages{
+      {"en", onexexplorer::LanguageCode::EN},
+      {"de", onexexplorer::LanguageCode::DE},
+      {"es", onexexplorer::LanguageCode::ES},
+      {"fr", onexexplorer::LanguageCode::FR},
   };
 
-  cxxopts::Options options(*argv, "A program to welcome the world!");
+  cxxopts::Options options(*argv,
+                           "OnexExplorerCli - a tool for unpacking and repacking .NOS data files");
 
   std::string language;
   std::string name;
@@ -36,7 +37,7 @@ auto main(int argc, char** argv) -> int {
   }
 
   if (result["version"].as<bool>()) {
-    std::cout << "Greeter, version " << GREETER_VERSION << std::endl;
+    std::cout << "OnexExplorerCli, version " << ONEXEXPLORER_VERSION << std::endl;
     return 0;
   }
 
@@ -46,8 +47,8 @@ auto main(int argc, char** argv) -> int {
     return 1;
   }
 
-  greeter::Greeter greeter(name);
-  std::cout << greeter.greet(langIt->second) << std::endl;
+  onexexplorer::OnexExplorer app(name);
+  std::cout << app.greet(langIt->second) << std::endl;
 
   return 0;
 }
