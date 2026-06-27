@@ -1,3 +1,7 @@
+
+OnexExplorer is tool for unpacking and repacking .NOS data files from the game NosTale.
+It supports Windows, Linux and MacOS
+
 ## Code style
 After each code change run `cmake --build build --target check-format` to check code style. Errors are under crash trace (which is not an error in this case). Styling errors if possible.
 

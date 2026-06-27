@@ -7,9 +7,6 @@ project(
   VERSION 1.0
   LANGUAGES CXX
 )
-
-# ---- Include guards ----
-
 if(PROJECT_SOURCE_DIR STREQUAL PROJECT_BINARY_DIR)
   message(
     FATAL_ERROR
@@ -31,6 +28,10 @@ CPMAddPackage(
   GITHUB_REPOSITORY fmtlib/fmt
   OPTIONS "FMT_INSTALL YES" # create an installable target
 )
+
+CPMAddPackage("gh:nlohmann/json@3.11.3")
+
+find_package(CURL REQUIRED)
 
 CPMAddPackage(
   NAME zlib
@@ -58,6 +59,12 @@ target_compile_options(${PROJECT_NAME} PUBLIC "$<$<COMPILE_LANG_AND_ID:CXX,MSVC>
 
 # Link dependencies
 target_link_libraries(${PROJECT_NAME} PRIVATE fmt::fmt)
+
+# download.cpp needs CURL and nlohmann_json headers, but linking them as PRIVATE targets breaks the
+# install export. Use include dirs instead.
+target_include_directories(
+  ${PROJECT_NAME} PRIVATE ${CURL_INCLUDE_DIRS} ${nlohmann_json_SOURCE_DIR}/include
+)
 
 target_include_directories(
   ${PROJECT_NAME} PUBLIC $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>

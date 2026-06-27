@@ -10,13 +10,13 @@ include(../cmake/tools.cmake)
 
 include(../cmake/CPM.cmake)
 
-CPMAddPackage(
-  GITHUB_REPOSITORY jarro2783/cxxopts
-  VERSION 3.3.1
-  OPTIONS "CXXOPTS_BUILD_EXAMPLES NO" "CXXOPTS_BUILD_TESTS NO" "CXXOPTS_ENABLE_INSTALL YES"
-)
+CPMAddPackage("gh:CLIUtils/CLI11@2.4.2")
+
+CPMAddPackage("gh:nlohmann/json@3.11.3")
 
 CPMAddPackage(NAME OnexExplorer SOURCE_DIR ${CMAKE_CURRENT_LIST_DIR}/..)
+
+find_package(CURL REQUIRED)
 
 # ---- Create standalone executable ----
 
@@ -26,4 +26,7 @@ add_executable(${PROJECT_NAME} ${sources})
 
 set_target_properties(${PROJECT_NAME} PROPERTIES CXX_STANDARD 23 OUTPUT_NAME "OnexExplorerCli")
 
-target_link_libraries(${PROJECT_NAME} OnexExplorer::OnexExplorer cxxopts)
+target_link_libraries(
+  ${PROJECT_NAME} OnexExplorer::OnexExplorer CLI11::CLI11 nlohmann_json::nlohmann_json
+  CURL::libcurl
+)

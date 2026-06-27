@@ -18,12 +18,16 @@ include(../cmake/CPM.cmake)
 CPMAddPackage("gh:doctest/doctest@2.5.2")
 CPMAddPackage("gh:TheLartians/Format.cmake@1.8.3")
 
+CPMAddPackage("gh:nlohmann/json@3.11.3")
+
 CPMAddPackage(
   NAME zlib
   GIT_TAG v1.3.1
   GITHUB_REPOSITORY madler/zlib EXCLUDE_FROM_ALL YES
   OPTIONS "ZLIB_BUILD_EXAMPLES OFF"
 )
+
+find_package(CURL REQUIRED)
 
 if(TEST_INSTALLED_VERSION)
   find_package(OnexExplorer REQUIRED)
@@ -35,7 +39,10 @@ endif()
 
 file(GLOB sources CONFIGURE_DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/source/*.cpp)
 add_executable(${PROJECT_NAME} ${sources})
-target_link_libraries(${PROJECT_NAME} doctest::doctest OnexExplorer::OnexExplorer zlibstatic)
+target_link_libraries(
+  ${PROJECT_NAME} doctest::doctest OnexExplorer::OnexExplorer zlibstatic
+  nlohmann_json::nlohmann_json CURL::libcurl
+)
 set_target_properties(${PROJECT_NAME} PROPERTIES CXX_STANDARD 23)
 
 # enable compiler warnings
