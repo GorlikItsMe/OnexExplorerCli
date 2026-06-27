@@ -58,7 +58,7 @@ namespace onex {
       auto* handle = curl_easy_init();
       if (!handle) throw std::runtime_error("failed to initialize curl handle");
 
-      auto* file = fopen(output_path.c_str(), "wb");
+      auto* file = fopen(output_path.string().c_str(), "wb");
       if (!file) {
         curl_easy_cleanup(handle);
         throw std::runtime_error(
