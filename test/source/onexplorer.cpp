@@ -1,6 +1,6 @@
 #include <doctest/doctest.h>
-#include <onexexplorer/stb_image_write.h>
 #include <onexexplorer/version.h>
+#include <onexplorer/stb_image_write.h>
 
 #include <string>
 #include <string_view>
