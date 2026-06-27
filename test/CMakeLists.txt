@@ -18,6 +18,12 @@ include(../cmake/CPM.cmake)
 CPMAddPackage("gh:doctest/doctest@2.5.2")
 CPMAddPackage("gh:TheLartians/Format.cmake@1.8.3")
 
+CPMAddPackage(
+  NAME zlib
+  GIT_TAG v1.3.1
+  GITHUB_REPOSITORY madler/zlib EXCLUDE_FROM_ALL YES
+)
+
 if(TEST_INSTALLED_VERSION)
   find_package(OnexExplorer REQUIRED)
 else()

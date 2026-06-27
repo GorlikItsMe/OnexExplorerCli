@@ -12,13 +12,14 @@ TEST_CASE("zlib compress/uncompress roundtrip") {
   }
 
   // Compress
-  uLongf compressed_size = compressBound(original.size());
+  uLongf compressed_size = compressBound(static_cast<uLong>(original.size()));
   std::vector<unsigned char> compressed(compressed_size);
-  int ret = compress(compressed.data(), &compressed_size, original.data(), original.size());
+  int ret = compress(compressed.data(), &compressed_size, original.data(),
+                     static_cast<uLong>(original.size()));
   REQUIRE(ret == Z_OK);
 
   // Decompress
-  uLongf decompressed_size = original.size();
+  uLongf decompressed_size = static_cast<uLongf>(original.size());
   std::vector<unsigned char> decompressed(decompressed_size);
   ret = uncompress(decompressed.data(), &decompressed_size, compressed.data(), compressed_size);
   REQUIRE(ret == Z_OK);
