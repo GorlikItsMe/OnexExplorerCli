@@ -2,9 +2,9 @@
   "version": "2.0.0",
   "tasks": [
     {
-      "label": "Build Greeter",
+      "label": "Build OnexExplorerCli",
       "type": "shell",
-      "command": "cmake --build build --target GreeterStandalone",
+      "command": "cmake --build build --target OnexExplorerCli",
       "group": {
         "kind": "build"
       },
@@ -18,7 +18,7 @@
     {
       "label": "Build Tests",
       "type": "shell",
-      "command": "cmake --build build --target GreeterTests",
+      "command": "cmake --build build --target OnexExplorerTests",
       "group": "build",
       "problemMatcher": [
         "$gcc"
