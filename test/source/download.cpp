@@ -7,8 +7,12 @@
 #include <string>
 #include <vector>
 
-TEST_CASE("download - match_archive exact match") {
-  curl_global_init(CURL_GLOBAL_ALL);
+struct CurlFixture {
+  CurlFixture() { curl_global_init(CURL_GLOBAL_ALL); }
+  ~CurlFixture() { curl_global_cleanup(); }
+};
+
+TEST_CASE_FIXTURE(CurlFixture, "download - match_archive exact match") {
   auto manifest = onex::fetch_manifest("latest");
   REQUIRE_FALSE(manifest.empty());
 
@@ -17,37 +21,29 @@ TEST_CASE("download - match_archive exact match") {
   CHECK(entry->file == manifest[0].file);
   CHECK(entry->size > 0);
   CHECK_FALSE(entry->sha1.empty());
-  curl_global_cleanup();
 }
 
-TEST_CASE("download - match_archive by bare filename") {
-  curl_global_init(CURL_GLOBAL_ALL);
+TEST_CASE_FIXTURE(CurlFixture, "download - match_archive by bare filename") {
   auto manifest = onex::fetch_manifest("latest");
   REQUIRE_FALSE(manifest.empty());
 
   auto bare = onex::basename(manifest[0].file);
   auto* entry = onex::match_archive(manifest, bare);
   REQUIRE(entry != nullptr);
-  curl_global_cleanup();
 }
 
-TEST_CASE("download - match_archive nonexistent name throws") {
-  curl_global_init(CURL_GLOBAL_ALL);
+TEST_CASE_FIXTURE(CurlFixture, "download - match_archive nonexistent name throws") {
   auto manifest = onex::fetch_manifest("latest");
   REQUIRE_FALSE(manifest.empty());
 
   CHECK_THROWS_AS(onex::match_archive(manifest, "__nonexistent_file__"), std::runtime_error);
-  curl_global_cleanup();
 }
 
-TEST_CASE("download - nonexistent build id throws") {
-  curl_global_init(CURL_GLOBAL_ALL);
+TEST_CASE_FIXTURE(CurlFixture, "download - nonexistent build id throws") {
   CHECK_THROWS_AS(onex::fetch_manifest("999999"), std::runtime_error);
-  curl_global_cleanup();
 }
 
-TEST_CASE("download - manifest entry fields are valid") {
-  curl_global_init(CURL_GLOBAL_ALL);
+TEST_CASE_FIXTURE(CurlFixture, "download - manifest entry fields are valid") {
   auto manifest = onex::fetch_manifest("latest");
   REQUIRE_FALSE(manifest.empty());
 
@@ -57,7 +53,6 @@ TEST_CASE("download - manifest entry fields are valid") {
     CHECK(entry.size > 0);
     CHECK_FALSE(entry.sha1.empty());
   }
-  curl_global_cleanup();
 }
 
 TEST_CASE("sha1 - known string") {

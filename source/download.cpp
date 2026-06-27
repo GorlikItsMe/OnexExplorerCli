@@ -16,6 +16,8 @@ namespace onex {
 
   namespace {
 
+    constexpr std::string_view patches_base_url = "http://patches.gameforge.com";
+
     auto string_write_callback(char* ptr, size_t size, size_t nmemb, void* userdata) -> size_t {
       auto& buf = *static_cast<std::string*>(userdata);
       buf.append(ptr, size * nmemb);
@@ -52,8 +54,14 @@ namespace onex {
       return data;
     }
 
+    auto sha1_matches(const ManifestEntry& entry, const fs::path& filepath) -> bool {
+      if (!fs::exists(filepath)) return false;
+      auto file_sha1 = Sha1::file_hex_digest(filepath.string());
+      return file_sha1 == entry.sha1;
+    }
+
     void download_file(const ManifestEntry& entry, const fs::path& output_path) {
-      auto url = std::format("http://patches.gameforge.com{}", entry.path);
+      auto url = std::format("{}{}", patches_base_url, entry.path);
 
       auto* handle = curl_easy_init();
       if (!handle) throw std::runtime_error("failed to initialize curl handle");
@@ -84,12 +92,12 @@ namespace onex {
         throw std::runtime_error(
             std::format("download failed ({}): {}", http_code, curl_easy_strerror(res)));
       }
-    }
 
-    auto sha1_matches(const ManifestEntry& entry, const fs::path& filepath) -> bool {
-      if (!fs::exists(filepath)) return false;
-      auto file_sha1 = Sha1::file_hex_digest(filepath.string());
-      return file_sha1 == entry.sha1;
+      if (!sha1_matches(entry, output_path)) {
+        fs::remove(output_path);
+        throw std::runtime_error(
+            std::format("SHA1 mismatch for '{}': downloaded file is corrupted", entry.file));
+      }
     }
 
   }  // namespace

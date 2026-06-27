@@ -2,9 +2,11 @@
 
 #include <array>
 #include <cstring>
+#include <format>
 #include <fstream>
 #include <iomanip>
 #include <sstream>
+#include <stdexcept>
 
 namespace onex {
 
@@ -35,7 +37,7 @@ namespace onex {
         finalized_{false} {}
 
   void Sha1::update(std::string_view data) {
-    if (finalized_) return;
+    if (finalized_) throw std::runtime_error("Sha1::update() called after finalization");
 
     for (size_t i = 0; i < data.size(); ++i) {
       buffer_[count_ % 64] = static_cast<std::byte>(data[i]);
@@ -128,7 +130,7 @@ namespace onex {
   std::string Sha1::file_hex_digest(std::string_view path) {
     Sha1 sha1;
     std::ifstream file(std::string{path}, std::ios::binary);
-    if (!file) return {};
+    if (!file) throw std::runtime_error(std::format("failed to open '{}' for SHA1 hashing", path));
 
     std::array<char, 8192> buffer{};
     while (file) {
