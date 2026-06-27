@@ -30,7 +30,7 @@ jobs:
         run: vcpkg install curl
 
       - name: configure
-        run: cmake -Stest -Bbuild -DCMAKE_TOOLCHAIN_FILE=${env:VCPKG_INSTALLATION_ROOT}/scripts/buildsystems/vcpkg.cmake
+        run: cmake -Stest -Bbuild -DCMAKE_TOOLCHAIN_FILE="${{ env.VCPKG_INSTALLATION_ROOT }}/scripts/buildsystems/vcpkg.cmake"
 
       - name: build
         run: cmake --build build --config Debug -j4
