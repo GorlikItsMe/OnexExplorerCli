@@ -2,24 +2,19 @@
   "version": "0.2.0",
   "configurations": [
     {
-      "name": "Run Greeter",
+      "name": "Run OnexExplorerCli",
       "type": "cppdbg",
       "request": "launch",
-      "program": "${workspaceFolder}/build/standalone/Greeter",
-      "args": [
-        "--name",
-        "World",
-        "--lang",
-        "en"
-      ],
+      "program": "${workspaceFolder}/build/standalone/OnexExplorerCli",
+      "args": [],
       "cwd": "${workspaceFolder}",
-      "preLaunchTask": "Build Greeter"
+      "preLaunchTask": "Build OnexExplorerCli"
     },
     {
       "name": "Debug Tests",
       "type": "cppdbg",
       "request": "launch",
-      "program": "${workspaceFolder}/build/test/GreeterTests",
+      "program": "${workspaceFolder}/build/test/OnexExplorerTests",
       "args": [],
       "cwd": "${workspaceFolder}",
       "preLaunchTask": "Build Tests",

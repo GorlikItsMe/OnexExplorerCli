@@ -69,7 +69,7 @@ target_include_directories(
 
 # the location where the project's version header will be placed should match the project's regular
 # header paths
-string(TOLOWER ${PROJECT_NAME}/version.h VERSION_HEADER_LOCATION)
+set(VERSION_HEADER_LOCATION "onex/version.h")
 
 packageProject(
   NAME ${PROJECT_NAME}
