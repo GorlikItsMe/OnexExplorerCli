@@ -36,6 +36,7 @@ CPMAddPackage(
   NAME zlib
   GIT_TAG v1.3.1
   GITHUB_REPOSITORY madler/zlib EXCLUDE_FROM_ALL YES
+  OPTIONS "ZLIB_BUILD_EXAMPLES OFF"
 )
 
 # ---- Add source files ----
