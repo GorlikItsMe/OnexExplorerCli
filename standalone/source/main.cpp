@@ -1,13 +1,17 @@
+#include <onex/archive/nos_archive.h>
 #include <onex/downloader/downloader.h>
 #include <onex/version.h>
 
 #include <CLI/CLI.hpp>
+#include <cctype>
+#include <cstdio>
 #include <iostream>
 #include <string>
 #include <vector>
 
 namespace {
 
+  using onex::archive::NosArchive;
   using onex::downloader::GameforgeDownloader;
 
   auto error_text(onex::Error e) -> std::string {
@@ -18,6 +22,10 @@ namespace {
         return "archive not found";
       case onex::Error::kAmbiguousMatch:
         return "ambiguous archive name (multiple manifest entries match)";
+      case onex::Error::kFileNotFound:
+        return "file not found";
+      case onex::Error::kReadError:
+        return "read error";
       case onex::Error::kInvalidHeader:
         return "invalid manifest";
       case onex::Error::kIoError:
@@ -67,6 +75,36 @@ namespace {
     return had_error ? 1 : 0;
   }
 
+  auto run_extract(const std::string& filepath) -> int {
+    auto result = NosArchive::open(filepath);
+    if (!result) {
+      std::cerr << "OnexExplorerCli: error: " << filepath << ": " << error_text(result.error)
+                << "\n";
+      return 1;
+    }
+
+    auto& h = result.value.header();
+    auto addr = 0u;
+
+    // Print hex bytes
+    std::printf("%08x: ", addr);
+    for (size_t i = 0; i < h.size(); ++i) {
+      std::printf("%02x", static_cast<unsigned>(h[i]));
+      if (i < h.size() - 1) {
+        std::putchar(' ');
+      }
+    }
+    std::printf("  ");
+
+    // Print ASCII representation
+    for (auto b : h) {
+      std::putchar(std::isprint(static_cast<unsigned char>(b)) ? static_cast<char>(b) : '.');
+    }
+    std::putchar('\n');
+
+    return 0;
+  }
+
 }  // namespace
 
 auto main(int argc, char** argv) -> int {
@@ -89,6 +127,12 @@ auto main(int argc, char** argv) -> int {
       ->required()
       ->expected(-1);
 
+  // extract subcommand
+  std::string extract_path;
+  auto* extract
+      = app.add_subcommand("extract", "Display the header of a .NOS archive as a hex dump");
+  extract->add_option("file", extract_path, "Path to a .NOS archive file")->required();
+
   CLI11_PARSE(app, argc, argv);
 
   if (show_version) {
@@ -98,6 +142,10 @@ auto main(int argc, char** argv) -> int {
 
   if (download->parsed()) {
     return run_download(output_dir, build_id, archive_names);
+  }
+
+  if (extract->parsed()) {
+    return run_extract(extract_path);
   }
 
   std::cout << app.help() << std::endl;
