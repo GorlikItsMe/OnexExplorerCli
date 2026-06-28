@@ -65,7 +65,10 @@ set_target_properties(${PROJECT_NAME} PROPERTIES CXX_STANDARD 23)
 # being a cross-platform target, we enforce standards conformance on MSVC
 target_compile_options(${PROJECT_NAME} PUBLIC "$<$<COMPILE_LANG_AND_ID:CXX,MSVC>:/permissive->")
 
-target_link_libraries(${PROJECT_NAME} PRIVATE fmt::fmt CURL::libcurl nlohmann_json::nlohmann_json)
+target_link_libraries(
+  ${PROJECT_NAME} PRIVATE fmt::fmt CURL::libcurl nlohmann_json::nlohmann_json
+                          $<BUILD_INTERFACE:zlibstatic>
+)
 
 target_include_directories(
   ${PROJECT_NAME} PUBLIC $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>

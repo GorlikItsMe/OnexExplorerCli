@@ -1,7 +1,6 @@
 #include <onex/archive/archive_format.h>
+#include <onex/archive/codec.h>
 #include <onex/archive/nos_archive.h>
-
-#include <fstream>
 
 namespace onex::archive {
 
@@ -33,9 +32,44 @@ namespace onex::archive {
     NosArchive result;
     result.header_ = header;
     result.filepath_ = filepath.string();
-    result.is_open_ = true;
+    result.stream_ = std::move(file);
     result.entries_ = std::move(entries.value);
     return {std::move(result)};
+  }
+
+  auto NosArchive::read_entry(size_t index) -> Result<std::vector<uint8_t>> {
+    if (index >= entries_.size()) {
+      return {{}, Error::kEntryNotFound};
+    }
+
+    const auto& entry = entries_[index];
+
+    auto data_offset = static_cast<std::streamoff>(entry.offset) + kEntryHeaderSize;
+    stream_.seekg(data_offset);
+    if (!stream_) {
+      return {{}, Error::kReadError};
+    }
+
+    std::vector<uint8_t> compressed(entry.compressed_size);
+    if (!stream_.read(reinterpret_cast<char*>(compressed.data()),
+                      static_cast<std::streamsize>(entry.compressed_size))) {
+      return {{}, Error::kReadError};
+    }
+
+    if (!entry.compressed) {
+      return {std::move(compressed)};
+    }
+
+    auto decompressed = entry.codec->decode(compressed);
+    if (!decompressed) {
+      return {std::move(decompressed.value), decompressed.error};
+    }
+
+    if (decompressed.value.size() != entry.uncompressed_size) {
+      return {{}, Error::kCorruptArchive};
+    }
+
+    return {std::move(decompressed.value)};
   }
 
 }  // namespace onex::archive

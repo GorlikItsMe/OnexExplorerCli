@@ -7,6 +7,8 @@
 #include <cctype>
 #include <cinttypes>
 #include <cstdio>
+#include <filesystem>
+#include <fstream>
 #include <iostream>
 #include <nlohmann/json.hpp>
 #include <string>
@@ -90,7 +92,8 @@ namespace {
     return had_error ? 1 : 0;
   }
 
-  auto run_extract(const std::string& filepath) -> int {
+  auto run_extract(const std::string& filepath, const std::string& output_dir,
+                   const std::vector<int>& entry_ids) -> int {
     auto result = NosArchive::open(filepath);
     if (!result) {
       std::cerr << "OnexExplorerCli: error: " << filepath << ": " << error_text(result.error)
@@ -98,26 +101,59 @@ namespace {
       return 1;
     }
 
-    auto& h = result.value.header();
-    auto addr = 0u;
+    auto& archive = result.value;
+    auto entries = archive.entries();
 
-    // Print hex bytes
-    std::printf("%08x: ", addr);
-    for (size_t i = 0; i < h.size(); ++i) {
-      std::printf("%02x", static_cast<unsigned>(h[i]));
-      if (i < h.size() - 1) {
-        std::putchar(' ');
+    auto had_error = false;
+
+    auto process_entry = [&](const onex::archive::EntryInfo& entry) {
+      auto data = archive.read_entry(&entry - entries.data());
+      if (!data) {
+        std::cerr << "OnexExplorerCli: error: entry " << entry.id << " (" << entry.name
+                  << "): " << error_text(data.error) << "\n";
+        had_error = true;
+        return;
+      }
+
+      auto out_path = std::filesystem::path(output_dir) / (entry.name + ".bin");
+      std::filesystem::create_directories(out_path.parent_path());
+
+      std::ofstream out{out_path, std::ios::binary};
+      if (!out) {
+        std::cerr << "OnexExplorerCli: error: cannot write " << out_path << "\n";
+        had_error = true;
+        return;
+      }
+      out.write(reinterpret_cast<const char*>(data.value.data()),
+                static_cast<std::streamsize>(data.value.size()));
+      std::cout << "Extracted " << entry.name << ".bin"
+                << " (" << data.value.size() << " bytes)\n";
+    };
+
+    if (entry_ids.empty()) {
+      // Extract all entries
+      for (const auto& entry : entries) {
+        process_entry(entry);
+      }
+    } else {
+      // Extract only matching entries by id
+      for (auto id : entry_ids) {
+        bool found = false;
+        for (const auto& entry : entries) {
+          if (static_cast<int>(entry.id) == id) {
+            process_entry(entry);
+            found = true;
+            break;
+          }
+        }
+        if (!found) {
+          std::cerr << "OnexExplorerCli: error: entry " << id << " not found\n";
+          had_error = true;
+        }
       }
     }
-    std::printf("  ");
 
-    // Print ASCII representation
-    for (auto b : h) {
-      std::putchar(std::isprint(static_cast<unsigned char>(b)) ? static_cast<char>(b) : '.');
-    }
-    std::putchar('\n');
-
-    return 0;
+    return had_error ? 1 : 0;
   }
 
   auto entry_type_name(onex::archive::EntryType type) -> const char* {
@@ -195,9 +231,13 @@ auto main(int argc, char** argv) -> int {
 
   // extract subcommand
   std::string extract_path;
-  auto* extract
-      = app.add_subcommand("extract", "Display the header of a .NOS archive as a hex dump");
+  std::string extract_output_dir;
+  std::vector<int> extract_entry_ids;
+  auto* extract = app.add_subcommand("extract", "Extract entries from a .NOS archive");
   extract->add_option("file", extract_path, "Path to a .NOS archive file")->required();
+  extract->add_option("-o,--output", extract_output_dir, "Output directory")->required();
+  extract->add_option("--entry", extract_entry_ids, "Entry ID(s) to extract (repeatable)")
+      ->expected(-1);
 
   // list subcommand
   std::string list_path;
@@ -218,7 +258,7 @@ auto main(int argc, char** argv) -> int {
   }
 
   if (extract->parsed()) {
-    return run_extract(extract_path);
+    return run_extract(extract_path, extract_output_dir, extract_entry_ids);
   }
 
   if (list_cmd->parsed()) {
