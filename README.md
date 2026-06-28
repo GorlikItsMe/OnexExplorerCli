@@ -19,6 +19,27 @@ OnexExplorer is an open-source tool for unpacking and repacking .NOS data files 
 
 - to be added
 
+## Download
+
+The `download` subcommand fetches `.NOS` archive files from the Gameforge CDN.
+It downloads the patch manifest, resolves each requested archive name against it, and streams the file directly to disk.
+
+```bash
+onexplorer download [-o <output-dir>] [--build-id <id>] <archive-names...>
+```
+
+- `-o, --output <dir>` (required) — target directory for downloaded files.
+- `--build-id <id>` — build version to fetch from (default: `latest`).
+- `archive-names...` (required) — one or more archive names from the Gameforge manifest. Resolution tries an exact `file`-field match first, then falls back to a bare filename match. An error is reported if a name matches more than one entry.
+
+Files already present on disk with a matching SHA1 are skipped.
+
+### Example
+
+```bash
+onexplorer download -o ./downloads NSipData.NOS NostaleData\\NSipData.NOS
+```
+
 ## Usage
 
 ### Build and run the standalone target
