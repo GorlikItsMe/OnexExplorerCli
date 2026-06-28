@@ -1,3 +1,4 @@
+#include <onex/archive/archive_format.h>
 #include <onex/archive/nos_archive.h>
 
 #include <fstream>
@@ -19,11 +20,22 @@ namespace onex::archive {
       return {NosArchive{}, Error::kReadError};
     }
 
+    auto format = ArchiveFormat::detect(header);
+    if (!format) {
+      return {NosArchive{}, Error::kInvalidFormat};
+    }
+
+    auto entries = format->parse_entry_table(header, file);
+    if (!entries) {
+      return {NosArchive{}, entries.error};
+    }
+
     NosArchive result;
     result.header_ = header;
     result.filepath_ = filepath.string();
     result.is_open_ = true;
-    return Result<NosArchive>{result};
+    result.entries_ = std::move(entries.value);
+    return {std::move(result)};
   }
 
 }  // namespace onex::archive

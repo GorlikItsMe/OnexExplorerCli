@@ -1,9 +1,11 @@
+#include <onex/archive/entry.h>
 #include <onex/archive/nos_archive.h>
 #include <onex/downloader/downloader.h>
 #include <onex/version.h>
 
 #include <CLI/CLI.hpp>
 #include <cctype>
+#include <cinttypes>
 #include <cstdio>
 #include <iostream>
 #include <string>
@@ -28,6 +30,8 @@ namespace {
         return "read error";
       case onex::Error::kInvalidHeader:
         return "invalid manifest";
+      case onex::Error::kInvalidFormat:
+        return "invalid or unsupported archive format";
       case onex::Error::kIoError:
         return "I/O error";
       default:
@@ -115,6 +119,39 @@ namespace {
     return 0;
   }
 
+  auto entry_type_name(onex::archive::EntryType type) -> const char* {
+    switch (type) {
+      case onex::archive::EntryType::Texture:
+        return "Texture";
+      case onex::archive::EntryType::Icon:
+        return "Icon";
+      case onex::archive::EntryType::Image4B:
+        return "Image4B";
+      case onex::archive::EntryType::TileGrid:
+        return "TileGrid";
+      case onex::archive::EntryType::Unknown:
+        return "Unknown";
+    }
+    return "Unknown";
+  }
+
+  auto run_list(const std::string& filepath) -> int {
+    auto result = NosArchive::open(filepath);
+    if (!result) {
+      std::cerr << "OnexExplorerCli: error: " << filepath << ": " << error_text(result.error)
+                << "\n";
+      return 1;
+    }
+
+    std::printf("  ID  %-10s  %-12s  %-10s  %s\n", "Name", "Type", "Size", "Compressed");
+    for (const auto& entry : result.value.entries()) {
+      std::printf("  %-3u  %-10s  %-12s  %-10" PRIu64 "  %s\n", entry.id, entry.name.c_str(),
+                  entry_type_name(entry.type), entry.uncompressed_size,
+                  entry.compressed ? "Yes" : "No");
+    }
+    return 0;
+  }
+
 }  // namespace
 
 auto main(int argc, char** argv) -> int {
@@ -144,6 +181,11 @@ auto main(int argc, char** argv) -> int {
       = app.add_subcommand("extract", "Display the header of a .NOS archive as a hex dump");
   extract->add_option("file", extract_path, "Path to a .NOS archive file")->required();
 
+  // list subcommand
+  std::string list_path;
+  auto* list_cmd = app.add_subcommand("list", "List entries in a .NOS archive");
+  list_cmd->add_option("file", list_path, "Path to a .NOS archive file")->required();
+
   CLI11_PARSE(app, argc, argv);
 
   if (show_version) {
@@ -157,6 +199,10 @@ auto main(int argc, char** argv) -> int {
 
   if (extract->parsed()) {
     return run_extract(extract_path);
+  }
+
+  if (list_cmd->parsed()) {
+    return run_list(list_path);
   }
 
   std::cout << app.help() << std::endl;

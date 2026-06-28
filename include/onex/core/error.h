@@ -9,6 +9,7 @@ namespace onex {
   enum class Error {
     kNone,
     kInvalidHeader,
+    kInvalidFormat,
     kCorruptArchive,
     kEntryNotFound,
     kAmbiguousMatch,
