@@ -26,8 +26,13 @@ jobs:
           path: "**/cpm_modules"
           key: ${{ github.workflow }}-cpm-modules-${{ hashFiles('**/CMakeLists.txt', '**/*.cmake') }}
 
+      - name: Install dependencies
+        run: vcpkg install curl
+        env:
+          VCPKG_DEFAULT_TRIPLET: x64-windows
+
       - name: configure
-        run: cmake -Stest -Bbuild
+        run: cmake -Stest -Bbuild -DCMAKE_TOOLCHAIN_FILE="C:/vcpkg/scripts/buildsystems/vcpkg.cmake"
 
       - name: build
         run: cmake --build build --config Debug -j4
