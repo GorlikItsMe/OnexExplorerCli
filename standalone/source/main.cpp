@@ -36,7 +36,7 @@ namespace {
   }
 
   auto run_download(const std::string& output_dir, const std::string& build_id,
-                    const std::vector<std::string>& archive_names) -> int {
+                    const std::vector<std::string>& archive_names, bool all) -> int {
     GameforgeDownloader downloader{"nostale", build_id};
 
     auto manifest = downloader.fetch_manifest();
@@ -46,8 +46,18 @@ namespace {
       return 1;
     }
 
+    auto names = archive_names;
+    if (all) {
+      names.clear();
+      for (const auto& entry : manifest.value.entries) {
+        if (!entry.folder) {
+          names.push_back(entry.file);
+        }
+      }
+    }
+
     auto had_error = false;
-    for (const auto& name : archive_names) {
+    for (const auto& name : names) {
       auto resolved = downloader.resolve(manifest.value.entries, name);
       if (!resolved) {
         std::cerr << "OnexExplorerCli: error: " << name << ": " << error_text(resolved.error)
@@ -116,6 +126,7 @@ auto main(int argc, char** argv) -> int {
   // download subcommand
   std::string output_dir;
   std::string build_id = "latest";
+  bool all = false;
   std::vector<std::string> archive_names;
 
   auto* download = app.add_subcommand("download", "Fetch .NOS archives from the Gameforge CDN");
@@ -123,8 +134,8 @@ auto main(int argc, char** argv) -> int {
       ->required();
   download->add_option("--build-id", build_id, "Build version (default: latest)")
       ->capture_default_str();
+  download->add_flag("--all", all, "Download all archives from the manifest");
   download->add_option("archive-names", archive_names, "Archive names from the Gameforge manifest")
-      ->required()
       ->expected(-1);
 
   // extract subcommand
@@ -141,7 +152,7 @@ auto main(int argc, char** argv) -> int {
   }
 
   if (download->parsed()) {
-    return run_download(output_dir, build_id, archive_names);
+    return run_download(output_dir, build_id, archive_names, all);
   }
 
   if (extract->parsed()) {
