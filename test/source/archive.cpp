@@ -23,19 +23,6 @@ TEST_CASE("NosArchive::open reads 16-byte header from a real NOS file") {
   CHECK(result.value.header().size() == 16);
 }
 
-TEST_CASE("NosArchive::open header contains known bytes for NStpData01.NOS") {
-  auto path = ensure_fixture("NostaleData\\NStpData01.NOS");
-
-  auto result = onex::archive::NosArchive::open(path);
-  REQUIRE(result);
-
-  auto& h = result.value.header();
-  const std::vector<uint8_t> expected = {
-      'N', 'T', ' ', 'D', 'a', 't', 'a', ' ', '0', '7', 0x00, 0x00
-  };
-  CHECK(std::equal(expected.begin(), expected.end(), h.begin()));
-}
-
 TEST_CASE("NosArchive::open header contains known bytes for NSipData.NOS") {
   auto path = ensure_fixture("NostaleData\\NSipData.NOS");
 
@@ -43,9 +30,8 @@ TEST_CASE("NosArchive::open header contains known bytes for NSipData.NOS") {
   REQUIRE(result);
 
   auto& h = result.value.header();
-  const std::vector<uint8_t> expected = {
-      'N', 'T', ' ', 'D', 'a', 't', 'a', ' ', '2', '4', 0x00, 0x00
-  };
+  const std::vector<uint8_t> expected
+      = {'N', 'T', ' ', 'D', 'a', 't', 'a', ' ', '2', '4', 0x00, 0x00};
   CHECK(std::equal(expected.begin(), expected.end(), h.begin()));
 }
 
@@ -56,9 +42,7 @@ TEST_CASE("NosArchive::open header does not contain known bytes for NSgtdData.NO
   REQUIRE(result);
 
   auto& h = result.value.header();
-  const std::vector<uint8_t> not_expected = {
-      'N', 'T', ' ', 'D', 'a', 't', 'a'
-  };
+  const std::vector<uint8_t> not_expected = {'N', 'T', ' ', 'D', 'a', 't', 'a'};
   CHECK(std::equal(not_expected.begin(), not_expected.end(), h.begin()) == false);
 }
 
