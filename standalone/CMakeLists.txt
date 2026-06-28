@@ -11,9 +11,9 @@ include(../cmake/tools.cmake)
 include(../cmake/CPM.cmake)
 
 CPMAddPackage(
-  GITHUB_REPOSITORY jarro2783/cxxopts
-  VERSION 3.3.1
-  OPTIONS "CXXOPTS_BUILD_EXAMPLES NO" "CXXOPTS_BUILD_TESTS NO" "CXXOPTS_ENABLE_INSTALL YES"
+  GITHUB_REPOSITORY CLIUtils/CLI11
+  GIT_TAG v2.4.2
+  OPTIONS "CLI11_BUILD_TESTS OFF" "CLI11_BUILD_EXAMPLES OFF"
 )
 
 CPMAddPackage(NAME OnexExplorer SOURCE_DIR ${CMAKE_CURRENT_LIST_DIR}/..)
@@ -26,4 +26,4 @@ add_executable(${PROJECT_NAME} ${sources})
 
 set_target_properties(${PROJECT_NAME} PROPERTIES CXX_STANDARD 23 OUTPUT_NAME "OnexExplorerCli")
 
-target_link_libraries(${PROJECT_NAME} OnexExplorer::OnexExplorer cxxopts)
+target_link_libraries(${PROJECT_NAME} OnexExplorer::OnexExplorer CLI11::CLI11)

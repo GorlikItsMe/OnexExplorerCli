@@ -28,6 +28,9 @@ jobs:
       - name: Install format dependencies
         run: pip3 install clang-format==14.0.6 cmake_format==0.6.11 pyyaml
 
+      - name: Install dependencies
+        run: sudo apt-get update && sudo apt-get install -y libcurl4-openssl-dev
+
       - name: configure
         run: cmake -Stest -Bbuild
 

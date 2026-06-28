@@ -28,6 +28,9 @@ jobs:
         run: |
           pip3 install jinja2==3.1.6 Pygments==2.19.1
 
+      - name: Install dependencies
+        run: sudo apt-get update && sudo apt-get install -y libcurl4-openssl-dev
+
       - name: Install Doxygen
         uses: ssciwr/doxygen-install@v1
         with:
