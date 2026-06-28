@@ -69,6 +69,7 @@ doctest_discover_tests(${PROJECT_NAME})
 # ---- code coverage ----
 
 if(ENABLE_TEST_COVERAGE)
-  target_compile_options(OnexExplorer PRIVATE -O0 -g -fprofile-arcs -ftest-coverage)
-  target_link_options(OnexExplorer PRIVATE -fprofile-arcs -ftest-coverage)
+  target_compile_options(OnexExplorer PRIVATE -O0 -g --coverage)
+  target_link_options(OnexExplorer PRIVATE --coverage)
+  target_link_options(${PROJECT_NAME} PRIVATE --coverage)
 endif()
