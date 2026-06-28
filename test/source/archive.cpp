@@ -12,6 +12,7 @@ TEST_CASE("NosArchive::open returns kFileNotFound for missing file") {
 }
 
 TEST_CASE("NosArchive::open reads 16-byte header from a real NOS file") {
+  // NSetcData.NOS — 1 KB
   auto path = ensure_fixture("NostaleData\\NSetcData.NOS");
   REQUIRE(std::filesystem::exists(path));
 
@@ -24,6 +25,7 @@ TEST_CASE("NosArchive::open reads 16-byte header from a real NOS file") {
 }
 
 TEST_CASE("NosArchive::open header contains known bytes for NSipData.NOS") {
+  // NSipData.NOS — 9.7 MB
   auto path = ensure_fixture("NostaleData\\NSipData.NOS");
 
   auto result = onex::archive::NosArchive::open(path);
@@ -36,6 +38,7 @@ TEST_CASE("NosArchive::open header contains known bytes for NSipData.NOS") {
 }
 
 TEST_CASE("NosArchive::open header does not contain known bytes for NSgtdData.NOS") {
+  // NSgtdData.NOS — 17.3 MB
   auto path = ensure_fixture("NostaleData\\NSgtdData.NOS");
 
   auto result = onex::archive::NosArchive::open(path);
@@ -47,6 +50,7 @@ TEST_CASE("NosArchive::open header does not contain known bytes for NSgtdData.NO
 }
 
 TEST_CASE("NosArchive::open header contains known bytes for NSmnData.NOS") {
+  // NSmnData.NOS — 0.5 MB
   auto path = ensure_fixture("NostaleData\\NSmnData.NOS");
 
   auto result = onex::archive::NosArchive::open(path);
@@ -60,6 +64,7 @@ TEST_CASE("NosArchive::open header contains known bytes for NSmnData.NOS") {
 }
 
 TEST_CASE("NosArchive::open header contains known bytes for NS4BbData.NOS") {
+  // NS4BbData.NOS — 79.4 MB
   auto path = ensure_fixture("NostaleData\\NS4BbData.NOS");
 
   auto result = onex::archive::NosArchive::open(path);
