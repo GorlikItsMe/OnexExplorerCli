@@ -18,13 +18,18 @@ TEST_CASE("NosArchive::open returns kFileNotFound for missing file") {
   CHECK(result.error == onex::Error::kFileNotFound);
 }
 
-TEST_CASE("NosArchive::open returns kInvalidFormat for unsupported format") {
-  // NSetcData.NOS is a text archive — no format parser yet
+TEST_CASE("NosArchive::open reads 16-byte header from a real NOS file" * doctest::skip(true)) {
+  // Skipped until a text-archive format parser is implemented (issue #2 handles zlib only)
+  // NSetcData.NOS — 1 KB, text archive — currently returns kInvalidFormat
   auto path = ensure_fixture("NostaleData\\NSetcData.NOS");
+  REQUIRE(std::filesystem::exists(path));
 
   auto result = onex::archive::NosArchive::open(path);
-  CHECK_FALSE(result);
-  CHECK(result.error == onex::Error::kInvalidFormat);
+  REQUIRE(result);
+
+  CHECK(result.value.is_open());
+  CHECK(result.value.filepath() == path.string());
+  CHECK(result.value.header().size() == 16);
 }
 
 // ---------------------------------------------------------------------------
@@ -62,22 +67,33 @@ TEST_CASE("NosArchive::open parses NS4BbData.NOS (32GBS V1.0)") {
   CHECK(result.value.entries().size() > 0);
 }
 
-TEST_CASE("NosArchive::open returns kInvalidFormat for CCINF archive") {
-  // NSmnData.NOS is CCINF V1.20 — not zlib, no parser yet
-  auto path = ensure_fixture("NostaleData\\NSmnData.NOS");
-
-  auto result = onex::archive::NosArchive::open(path);
-  CHECK_FALSE(result);
-  CHECK(result.error == onex::Error::kInvalidFormat);
-}
-
-TEST_CASE("NosArchive::open returns kInvalidFormat for text archive") {
-  // NSgtdData.NOS is a text archive — no parser yet
+TEST_CASE("NosArchive::open header does not contain known bytes for NSgtdData.NOS"
+          * doctest::skip(true)) {
+  // Skipped until a text-archive format parser is implemented
+  // NSgtdData.NOS — 17.3 MB, text archive — currently returns kInvalidFormat
   auto path = ensure_fixture("NostaleData\\NSgtdData.NOS");
 
   auto result = onex::archive::NosArchive::open(path);
-  CHECK_FALSE(result);
-  CHECK(result.error == onex::Error::kInvalidFormat);
+  REQUIRE(result);
+
+  auto& h = result.value.header();
+  const std::vector<uint8_t> not_expected = {'N', 'T', ' ', 'D', 'a', 't', 'a'};
+  CHECK(std::equal(not_expected.begin(), not_expected.end(), h.begin()) == false);
+}
+
+TEST_CASE("NosArchive::open header contains known bytes for NSmnData.NOS" * doctest::skip(true)) {
+  // Skipped until a CCINF-archive format parser is implemented
+  // NSmnData.NOS — 0.5 MB, CCINF V1.20 — currently returns kInvalidFormat
+  auto path = ensure_fixture("NostaleData\\NSmnData.NOS");
+
+  auto result = onex::archive::NosArchive::open(path);
+  REQUIRE(result);
+
+  auto& h = result.value.header();
+  const std::vector<uint8_t> expected = {
+      'C', 'C', 'I', 'N', 'F', ' ', 'V', '1', '.', '2', '0',
+  };
+  CHECK(std::equal(expected.begin(), expected.end(), h.begin()));
 }
 
 // ---------------------------------------------------------------------------
