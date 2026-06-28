@@ -8,6 +8,7 @@
 #include <cinttypes>
 #include <cstdio>
 #include <iostream>
+#include <nlohmann/json.hpp>
 #include <string>
 #include <vector>
 
@@ -135,7 +136,7 @@ namespace {
     return "Unknown";
   }
 
-  auto run_list(const std::string& filepath) -> int {
+  auto run_list(const std::string& filepath, bool json_output) -> int {
     auto result = NosArchive::open(filepath);
     if (!result) {
       std::cerr << "OnexExplorerCli: error: " << filepath << ": " << error_text(result.error)
@@ -143,11 +144,28 @@ namespace {
       return 1;
     }
 
-    std::printf("  ID  %-10s  %-12s  %-10s  %s\n", "Name", "Type", "Size", "Compressed");
-    for (const auto& entry : result.value.entries()) {
-      std::printf("  %-3u  %-10s  %-12s  %-10" PRIu64 "  %s\n", entry.id, entry.name.c_str(),
-                  entry_type_name(entry.type), entry.uncompressed_size,
-                  entry.compressed ? "Yes" : "No");
+    if (json_output) {
+      nlohmann::json j = nlohmann::json::array();
+      for (const auto& entry : result.value.entries()) {
+        j.push_back({
+            {"id", entry.id},
+            {"name", entry.name},
+            {"type", entry_type_name(entry.type)},
+            {"creation_date", entry.creation_date},
+            {"compressed", entry.compressed},
+            {"offset", entry.offset},
+            {"compressed_size", entry.compressed_size},
+            {"uncompressed_size", entry.uncompressed_size},
+        });
+      }
+      std::cout << j.dump(2) << "\n";
+    } else {
+      std::printf("  ID  %-10s  %-12s  %-10s  %s\n", "Name", "Type", "Size", "Compressed");
+      for (const auto& entry : result.value.entries()) {
+        std::printf("  %-3u  %-10s  %-12s  %-10" PRIu64 "  %s\n", entry.id, entry.name.c_str(),
+                    entry_type_name(entry.type), entry.uncompressed_size,
+                    entry.compressed ? "Yes" : "No");
+      }
     }
     return 0;
   }
@@ -183,8 +201,10 @@ auto main(int argc, char** argv) -> int {
 
   // list subcommand
   std::string list_path;
+  bool list_json = false;
   auto* list_cmd = app.add_subcommand("list", "List entries in a .NOS archive");
   list_cmd->add_option("file", list_path, "Path to a .NOS archive file")->required();
+  list_cmd->add_flag("--json", list_json, "Output as JSON");
 
   CLI11_PARSE(app, argc, argv);
 
@@ -202,7 +222,7 @@ auto main(int argc, char** argv) -> int {
   }
 
   if (list_cmd->parsed()) {
-    return run_list(list_path);
+    return run_list(list_path, list_json);
   }
 
   std::cout << app.help() << std::endl;

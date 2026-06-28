@@ -26,4 +26,6 @@ add_executable(${PROJECT_NAME} ${sources})
 
 set_target_properties(${PROJECT_NAME} PROPERTIES CXX_STANDARD 23 OUTPUT_NAME "OnexExplorerCli")
 
-target_link_libraries(${PROJECT_NAME} OnexExplorer::OnexExplorer CLI11::CLI11)
+target_link_libraries(
+  ${PROJECT_NAME} OnexExplorer::OnexExplorer CLI11::CLI11 nlohmann_json::nlohmann_json
+)
