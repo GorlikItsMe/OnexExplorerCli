@@ -92,6 +92,10 @@ namespace {
     return had_error ? 1 : 0;
   }
 
+  auto is_text_type(onex::archive::EntryType type) -> bool {
+    return type == onex::archive::EntryType::TextDat || type == onex::archive::EntryType::TextLst;
+  }
+
   auto run_extract(const std::string& filepath, const std::string& output_dir,
                    const std::vector<int>& entry_ids) -> int {
     auto result = NosArchive::open(filepath);
@@ -115,7 +119,8 @@ namespace {
         return;
       }
 
-      auto out_path = std::filesystem::path(output_dir) / (entry.name + ".bin");
+      auto ext = is_text_type(entry.type) ? ".txt" : ".bin";
+      auto out_path = std::filesystem::path(output_dir) / (entry.name + ext);
       std::filesystem::create_directories(out_path.parent_path());
 
       std::ofstream out{out_path, std::ios::binary};
@@ -126,8 +131,7 @@ namespace {
       }
       out.write(reinterpret_cast<const char*>(data.value.data()),
                 static_cast<std::streamsize>(data.value.size()));
-      std::cout << "Extracted " << entry.name << ".bin"
-                << " (" << data.value.size() << " bytes)\n";
+      std::cout << "Extracted " << entry.name << ext << " (" << data.value.size() << " bytes)\n";
     };
 
     if (entry_ids.empty()) {
@@ -166,6 +170,10 @@ namespace {
         return "Image4B";
       case onex::archive::EntryType::TileGrid:
         return "TileGrid";
+      case onex::archive::EntryType::TextDat:
+        return "TextDat";
+      case onex::archive::EntryType::TextLst:
+        return "TextLst";
       case onex::archive::EntryType::Unknown:
         return "Unknown";
     }

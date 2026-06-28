@@ -44,7 +44,8 @@ namespace onex::archive {
 
     const auto& entry = entries_[index];
 
-    auto data_offset = static_cast<std::streamoff>(entry.offset) + kEntryHeaderSize;
+    bool is_text = entry.type == EntryType::TextDat || entry.type == EntryType::TextLst;
+    auto data_offset = static_cast<std::streamoff>(entry.offset) + (is_text ? 0 : kEntryHeaderSize);
     stream_.seekg(data_offset);
     if (!stream_) {
       return {{}, Error::kReadError};

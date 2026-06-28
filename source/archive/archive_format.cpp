@@ -1,4 +1,5 @@
 #include <onex/archive/archive_format.h>
+#include <onex/archive/text_archive_format.h>
 #include <onex/archive/zlib_archive_format.h>
 
 namespace onex::archive {
@@ -16,7 +17,9 @@ namespace onex::archive {
         return std::make_unique<ZlibArchiveFormat>();
       }
     }
-    return nullptr;
+    // CCINF is still out of scope (deferred)
+    // Everything else is treated as TextArchive
+    return std::make_unique<TextArchiveFormat>();
   }
 
 }  // namespace onex::archive

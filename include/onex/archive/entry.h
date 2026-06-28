@@ -12,6 +12,8 @@ namespace onex::archive {
     Icon,      // NSipData (24), ITEMS V1.0 (103)
     Image4B,   // NS4BbData (101, 32GBS V1.0)
     TileGrid,  // NStcData (5)
+    TextDat,   // .dat file within a TextArchive
+    TextLst,   // .lst file within a TextArchive
     Unknown,
   };
 

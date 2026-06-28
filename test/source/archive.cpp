@@ -20,9 +20,8 @@ TEST_CASE("NosArchive::open returns kFileNotFound for missing file") {
   CHECK(result.error == onex::Error::kFileNotFound);
 }
 
-TEST_CASE("NosArchive::open reads 16-byte header from a real NOS file" * doctest::skip(true)) {
-  // Skipped until a text-archive format parser is implemented (issue #2 handles zlib only)
-  // NSetcData.NOS — 1 KB, text archive — currently returns kInvalidFormat
+TEST_CASE("NosArchive::open reads 16-byte header from a real NOS file") {
+  // NSetcData.NOS — 1 KB, text archive
   auto path = ensure_fixture("NostaleData\\NSetcData.NOS");
   REQUIRE(std::filesystem::exists(path));
 
@@ -69,10 +68,8 @@ TEST_CASE("NosArchive::open parses NS4BbData.NOS (32GBS V1.0)") {
   CHECK(result.value.entries().size() > 0);
 }
 
-TEST_CASE("NosArchive::open header does not contain known bytes for NSgtdData.NOS"
-          * doctest::skip(true)) {
-  // Skipped until a text-archive format parser is implemented
-  // NSgtdData.NOS — 17.3 MB, text archive — currently returns kInvalidFormat
+TEST_CASE("NosArchive::open header does not contain known bytes for NSgtdData.NOS") {
+  // NSgtdData.NOS — 17.3 MB, text archive
   auto path = ensure_fixture("NostaleData\\NSgtdData.NOS");
 
   auto result = onex::archive::NosArchive::open(path);
@@ -123,11 +120,12 @@ TEST_CASE("ArchiveFormat::detect returns ZlibArchiveFormat for ITEMS V1.0") {
   REQUIRE(fmt);
 }
 
-TEST_CASE("ArchiveFormat::detect returns nullptr for unknown magic") {
+TEST_CASE("ArchiveFormat::detect returns TextArchiveFormat for CCINF") {
   std::vector<uint8_t> header{'C', 'C', 'I', 'N',  'F',  ' ',  'V',  '1',
                               '.', '2', '0', 0x00, 0x00, 0x00, 0x00, 0x00};
   auto fmt = onex::archive::ArchiveFormat::detect(header);
-  CHECK_FALSE(fmt);
+  // CCINF is not yet implemented, but unknown magic falls through to TextArchive
+  REQUIRE(fmt);
 }
 
 TEST_CASE("ArchiveFormat::detect returns nullptr for invalid header") {
