@@ -76,11 +76,25 @@ jobs:
         with:
           path: artifacts
 
-      - name: Create Release
+      - name: Rename artifacts to avoid name collisions
+        run: |
+          for dir in artifacts/*/; do
+            name="$(basename "$dir")"
+            file="$(find "$dir" -type f | head -1)"
+            mv "$file" "artifacts/$name.tmp"
+            rm -rf "$dir"
+            mv "artifacts/$name.tmp" "artifacts/$name"
+          done
+
+      - name: Create or update Release
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh release create "${{ github.ref_name }}" \
-            --title "${{ github.ref_name }}" \
-            --generate-notes \
-            artifacts/*/*
+          if gh release view "${{ github.ref_name }}" >/dev/null 2>&1; then
+            gh release upload "${{ github.ref_name }}" artifacts/* --clobber
+          else
+            gh release create "${{ github.ref_name }}" \
+              --title "${{ github.ref_name }}" \
+              --generate-notes \
+              artifacts/*
+          fi
