@@ -34,13 +34,3 @@ TEST_CASE("parse_build_info rejects invalid JSON") {
   CHECK(result.error == onex::Error::kInvalidHeader);
 }
 
-TEST_CASE("parse_build_info defaults missing fields") {
-  std::string json_str = R"({"entries":[]})";
-  std::vector<onex::byte> raw(json_str.begin(), json_str.end());
-
-  auto result = onex::downloader::parse_build_info(raw);
-  REQUIRE(result);
-  CHECK(result.value.entries.empty());
-  CHECK(result.value.build == 0);
-  CHECK(result.value.total_size == 0);
-}

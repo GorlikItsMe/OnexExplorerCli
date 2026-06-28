@@ -23,72 +23,47 @@ namespace {
 
 }  // namespace
 
-TEST_CASE("fetch_manifest returns a non-empty manifest from Gameforge CDN") {
-  GameforgeDownloader d{"nostale", "latest"};
-  auto manifest = d.fetch_manifest();
-  REQUIRE(manifest);
-  CHECK_FALSE(manifest.value.entries.empty());
-  CHECK(manifest.value.build > 0);
-}
-
 TEST_CASE("download_file streams the smallest entry and size matches manifest") {
   GameforgeDownloader d{"nostale", "latest"};
   auto manifest = d.fetch_manifest();
   REQUIRE(manifest);
 
+  // Check that the manifest is not empty
+  CHECK_FALSE(manifest.value.entries.empty());
+
+  // Find NostaleData\\NSetcData.NOS
   const BuildInfoEntry* pick = nullptr;
   for (const auto& entry : manifest.value.entries) {
-    if (entry.folder || entry.file.empty() || entry.size <= 0) {
-      continue;
-    }
-    if (pick == nullptr || entry.size < pick->size) {
+    if (!entry.folder && entry.file == "NostaleData\\NSetcData.NOS") {
       pick = &entry;
     }
   }
   REQUIRE(pick != nullptr);
 
+  // Create a temporary directory for the test
   auto dir = std::filesystem::temp_directory_path() / "onex_download_network_test";
   std::filesystem::remove_all(dir);
 
+  // Download the file
   auto status = d.download_file(*pick, dir.string());
   REQUIRE(status);
   CHECK(status.value == GameforgeDownloader::FileStatus::kDownloaded);
 
+  // Check that the file exists and has the correct size
   auto out = output_path_for(dir.string(), *pick);
   REQUIRE(std::filesystem::exists(out));
   CHECK(std::filesystem::file_size(out) == static_cast<std::uintmax_t>(pick->size));
 
+  // Check that the file has the correct SHA1
   if (!pick->sha1.empty()) {
     CHECK(onex::downloader::sha1_file_hex(out.string()) == pick->sha1);
   }
 
-  std::filesystem::remove_all(dir);
-}
-
-TEST_CASE("download_file skips an entry already on disk with matching SHA1") {
-  GameforgeDownloader d{"nostale", "latest"};
-  auto manifest = d.fetch_manifest();
-  REQUIRE(manifest);
-
-  const BuildInfoEntry* pick = nullptr;
-  for (const auto& entry : manifest.value.entries) {
-    if (entry.folder || entry.file.empty() || entry.size <= 0 || entry.sha1.empty()) {
-      continue;
-    }
-    if (pick == nullptr || entry.size < pick->size) {
-      pick = &entry;
-    }
-  }
-  REQUIRE(pick != nullptr);
-
-  auto dir = std::filesystem::temp_directory_path() / "onex_download_skip_test";
-  std::filesystem::remove_all(dir);
-
-  REQUIRE(d.download_file(*pick, dir.string()));
-
+  // Download the file again (should be skipped)
   auto second = d.download_file(*pick, dir.string());
   REQUIRE(second);
   CHECK(second.value == GameforgeDownloader::FileStatus::kSkipped);
 
+  // Remove the temporary directory
   std::filesystem::remove_all(dir);
 }

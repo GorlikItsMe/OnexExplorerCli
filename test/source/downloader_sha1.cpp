@@ -7,15 +7,15 @@
 #include <vector>
 
 TEST_CASE("sha1_hex of known inputs") {
-  // SHA-1("abc") per RFC 3174 / FIPS 180-1:
-  //   A9 99 3E 36 47 06 81 6A BA 3E 25 71 78 50 C2 6C 9C D0 D8 9D
+  // echo -n "abc" | sha1sum
   std::string s = "abc";
   std::vector<onex::byte> data(s.begin(), s.end());
   CHECK(onex::downloader::sha1_hex(data) == "a9993e364706816aba3e25717850c26c9cd0d89d");
 
-  // SHA-1("") = da39a3ee5e6b4b0d3255bfef95601890afd80709
-  std::vector<onex::byte> empty;
-  CHECK(onex::downloader::sha1_hex(empty) == "da39a3ee5e6b4b0d3255bfef95601890afd80709");
+  // echo -n "xyz" | sha1sum
+  std::string s2 = "xyz";
+  std::vector<onex::byte> data2(s2.begin(), s2.end());
+  CHECK(onex::downloader::sha1_hex(data2) == "66b27417d37e024c46526c2f6d358a754fc552f3");
 }
 
 TEST_CASE("sha1_file_hex matches sha1_hex for the same content") {

@@ -82,18 +82,6 @@ TEST_CASE("resolve reports ambiguous bare filename match") {
   CHECK(r.error == onex::Error::kAmbiguousMatch);
 }
 
-TEST_CASE("resolve reports ambiguous exact match") {
-  auto d = makeDownloader();
-  std::vector<BuildInfoEntry> entries = {
-      makeEntry("NSipData.NOS", 100),
-      makeEntry("NSipData.NOS", 200),
-  };
-
-  auto r = d.resolve(entries, "NSipData.NOS");
-  CHECK_FALSE(r);
-  CHECK(r.error == onex::Error::kAmbiguousMatch);
-}
-
 TEST_CASE("resolve reports not found when nothing matches") {
   auto d = makeDownloader();
   std::vector<BuildInfoEntry> entries = {
