@@ -33,4 +33,3 @@ TEST_CASE("parse_build_info rejects invalid JSON") {
   CHECK_FALSE(result);
   CHECK(result.error == onex::Error::kInvalidHeader);
 }
-
