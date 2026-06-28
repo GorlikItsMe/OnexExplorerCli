@@ -3,9 +3,12 @@
 #include <onex/archive/text_dat_codec.h>
 #include <onex/archive/text_lst_codec.h>
 
+#include <array>
+#include <cstdint>
 #include <cstring>
 #include <sstream>
 #include <string_view>
+#include <vector>
 
 // ---------------------------------------------------------------------------
 // text_dat_codec tests
