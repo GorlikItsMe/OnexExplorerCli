@@ -2,6 +2,7 @@
 #include <onex/archive/archive_format.h>
 #include <onex/archive/nos_archive.h>
 #include <onex/archive/zlib_archive_format.h>
+#include <onex/archive/zlib_codec.h>
 
 #include <filesystem>
 #include <fstream>
@@ -221,6 +222,52 @@ TEST_CASE(
   auto result = fmt.parse_entry_table(buf, stream);
   CHECK_FALSE(result);
   CHECK(result.error == onex::Error::kInvalidFormat);
+}
+
+// ---------------------------------------------------------------------------
+// NosArchive::read_entry – integration with real fixture
+// ---------------------------------------------------------------------------
+
+TEST_CASE("NosArchive::read_entry returns decompressed data for first entry") {
+  auto path = ensure_fixture("NostaleData\\NStpData01.NOS");
+
+  auto result = onex::archive::NosArchive::open(path);
+  REQUIRE(result);
+
+  auto& archive = result.value;
+  REQUIRE(archive.entries().size() > 0);
+
+  auto entry = archive.entries()[0];
+  auto data = archive.read_entry(0);
+  REQUIRE(data);
+  CHECK(data.value.size() == entry.uncompressed_size);
+}
+
+TEST_CASE("NosArchive::read_entry returns kEntryNotFound for bad index") {
+  auto path = ensure_fixture("NostaleData\\NSipData.NOS");
+
+  auto result = onex::archive::NosArchive::open(path);
+  REQUIRE(result);
+
+  auto data = result.value.read_entry(999999);
+  CHECK_FALSE(data);
+  CHECK(data.error == onex::Error::kEntryNotFound);
+}
+
+TEST_CASE("NosArchive::read_entry each entry has matching uncompressed_size") {
+  auto path = ensure_fixture("NostaleData\\NSipData.NOS");
+
+  auto result = onex::archive::NosArchive::open(path);
+  REQUIRE(result);
+
+  auto& archive = result.value;
+  // Test first 5 entries
+  auto count = std::min<size_t>(5, archive.entries().size());
+  for (size_t i = 0; i < count; ++i) {
+    auto data = archive.read_entry(i);
+    REQUIRE(data);
+    CHECK(data.value.size() == archive.entries()[i].uncompressed_size);
+  }
 }
 
 TEST_CASE("ZlibArchiveFormat::parse_entry_table returns kReadError for offset past EOF") {

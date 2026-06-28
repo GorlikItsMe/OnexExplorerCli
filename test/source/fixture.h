@@ -2,8 +2,10 @@
 
 #include <onex/downloader/downloader.h>
 
+#include <chrono>
 #include <filesystem>
 #include <string>
+#include <thread>
 
 namespace {
 
@@ -25,30 +27,47 @@ namespace {
   }
 
   auto ensure_fixture(const std::string& name) -> std::filesystem::path {
-    GameforgeDownloader d{"nostale", "latest"};
-    auto manifest = d.fetch_manifest();
-    if (!manifest) {
-      throw std::runtime_error{"failed to fetch manifest"};
-    }
+    constexpr int kMaxAttempts = 3;
 
-    const BuildInfoEntry* pick = nullptr;
-    for (const auto& entry : manifest.value.entries) {
-      if (!entry.folder && entry.file == name) {
-        pick = &entry;
-        break;
+    GameforgeDownloader d{"nostale", "latest"};
+
+    BuildInfoEntry pick_entry{};
+    bool found = false;
+
+    for (int attempt = 1; attempt <= kMaxAttempts; ++attempt) {
+      auto manifest = d.fetch_manifest();
+      if (!manifest) {
+        if (attempt < kMaxAttempts) {
+          std::this_thread::sleep_for(std::chrono::seconds(1));
+          continue;
+        }
+        throw std::runtime_error{"failed to fetch manifest"};
+      }
+
+      for (const auto& entry : manifest.value.entries) {
+        if (!entry.folder && entry.file == name) {
+          pick_entry = entry;
+          found = true;
+          break;
+        }
+      }
+
+      if (!found) {
+        throw std::runtime_error{"fixture not found in manifest: " + name};
+      }
+
+      auto dir = fixture_dir().string();
+      auto status = d.download_file(pick_entry, dir);
+      if (status) {
+        return output_path_for(dir, pick_entry);
+      }
+
+      if (attempt < kMaxAttempts) {
+        std::this_thread::sleep_for(std::chrono::seconds(1));
       }
     }
-    if (!pick) {
-      throw std::runtime_error{"fixture not found in manifest: " + name};
-    }
 
-    auto dir = fixture_dir().string();
-    auto status = d.download_file(*pick, dir);
-    if (!status) {
-      throw std::runtime_error{"failed to download fixture: " + name};
-    }
-
-    return output_path_for(dir, *pick);
+    throw std::runtime_error{"failed to download fixture: " + name};
   }
 
 }  // namespace

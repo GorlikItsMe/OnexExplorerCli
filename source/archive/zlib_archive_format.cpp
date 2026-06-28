@@ -1,5 +1,5 @@
-#include <onex/archive/codec.h>
 #include <onex/archive/zlib_archive_format.h>
+#include <onex/archive/zlib_codec.h>
 
 #include <array>
 #include <optional>
@@ -8,8 +8,6 @@
 namespace onex::archive {
 
   namespace {
-
-    static const Codec kZlibCodec;
 
     auto read_u32_le(std::istream& s) -> std::optional<uint32_t> {
       std::array<char, 4> buf{};
@@ -100,7 +98,7 @@ namespace onex::archive {
           .offset = abs_offset,
           .compressed_size = *compressed_data_size,
           .uncompressed_size = *data_size,
-          .codec = &kZlibCodec,
+          .codec = zlib_codec(),
       });
     }
 
