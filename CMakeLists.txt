@@ -39,6 +39,15 @@ CPMAddPackage(
   OPTIONS "ZLIB_BUILD_EXAMPLES OFF"
 )
 
+find_package(CURL REQUIRED)
+
+CPMAddPackage(
+  NAME nlohmann_json
+  GIT_TAG v3.11.3
+  GITHUB_REPOSITORY nlohmann/json
+  OPTIONS "JSON_BuildTests OFF" "JSON_Install ON"
+)
+
 # ---- Add source files ----
 
 # Note: globbing sources is considered bad practice as CMake's generators may not detect new files
@@ -56,8 +65,7 @@ set_target_properties(${PROJECT_NAME} PROPERTIES CXX_STANDARD 23)
 # being a cross-platform target, we enforce standards conformance on MSVC
 target_compile_options(${PROJECT_NAME} PUBLIC "$<$<COMPILE_LANG_AND_ID:CXX,MSVC>:/permissive->")
 
-# Link dependencies
-target_link_libraries(${PROJECT_NAME} PRIVATE fmt::fmt)
+target_link_libraries(${PROJECT_NAME} PRIVATE fmt::fmt CURL::libcurl nlohmann_json::nlohmann_json)
 
 target_include_directories(
   ${PROJECT_NAME} PUBLIC $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>
