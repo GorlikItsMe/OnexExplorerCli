@@ -1,0 +1,86 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+env:
+  CPM_SOURCE_CACHE: ${{ github.workspace }}/cpm_modules
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        include:
+          - os: ubuntu-latest
+            artifact_name: OnexExplorerCli-linux
+            binary_path: build/OnexExplorerCli
+            deps: sudo apt-get update && sudo apt-get install -y libcurl4-openssl-dev
+            vcpkg_toolchain: ""
+
+          - os: macos-latest
+            artifact_name: OnexExplorerCli-macos
+            binary_path: build/OnexExplorerCli
+            deps: ""
+            vcpkg_toolchain: ""
+
+          - os: windows-latest
+            artifact_name: OnexExplorerCli-windows.exe
+            binary_path: build/Release/OnexExplorerCli.exe
+            deps: vcpkg install curl
+            vcpkg_toolchain: -DCMAKE_TOOLCHAIN_FILE="C:/vcpkg/scripts/buildsystems/vcpkg.cmake"
+            vcpkg_triplet: x64-windows
+
+    runs-on: ${{ matrix.os }}
+    name: Build ${{ matrix.os }}
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - uses: actions/cache@v3
+        with:
+          path: "**/cpm_modules"
+          key: ${{ github.workflow }}-${{ matrix.os }}-cpm-modules-${{ hashFiles('**/CMakeLists.txt', '**/*.cmake') }}
+
+      - name: Install dependencies
+        if: matrix.deps != ''
+        run: ${{ matrix.deps }}
+        env:
+          VCPKG_DEFAULT_TRIPLET: ${{ matrix.vcpkg_triplet }}
+
+      - name: Configure
+        run: cmake -Sstandalone -Bbuild -DCMAKE_BUILD_TYPE=Release ${{ matrix.vcpkg_toolchain }}
+
+      - name: Build
+        run: cmake --build build --config Release -j4
+
+      - name: Upload binary
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.artifact_name }}
+          path: ${{ matrix.binary_path }}
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    name: Create GitHub Release
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Create Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "${{ github.ref_name }}" \
+            --title "${{ github.ref_name }}" \
+            --generate-notes \
+            artifacts/*/*
