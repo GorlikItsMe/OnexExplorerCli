@@ -25,7 +25,7 @@ The `download` subcommand fetches `.NOS` archive files from the Gameforge CDN.
 It downloads the patch manifest, resolves each requested archive name against it, and streams the file directly to disk.
 
 ```bash
-onexplorer download [-o <output-dir>] [--build-id <id>] <archive-names...>
+OnexExplorerCli download [-o <output-dir>] [--build-id <id>] <archive-names...>
 ```
 
 - `-o, --output <dir>` (required) — target directory for downloaded files.
@@ -37,7 +37,7 @@ Files already present on disk with a matching SHA1 are skipped.
 ### Example
 
 ```bash
-onexplorer download -o ./downloads NSipData.NOS NostaleData\\NSipData.NOS
+OnexExplorerCli download -o ./downloads NSipData.NOS NostaleData\\NSipData.NOS
 ```
 
 ## Usage
