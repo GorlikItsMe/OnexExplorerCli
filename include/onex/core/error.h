@@ -14,6 +14,8 @@ namespace onex {
     kAmbiguousMatch,
     kDecompressFailed,
     kCompressFailed,
+    kFileNotFound,
+    kReadError,
     kIoError,
     kNetworkError,
   };

@@ -1,13 +1,17 @@
+#include <onex/archive/nos_archive.h>
 #include <onex/downloader/downloader.h>
 #include <onex/version.h>
 
 #include <CLI/CLI.hpp>
+#include <cctype>
+#include <cstdio>
 #include <iostream>
 #include <string>
 #include <vector>
 
 namespace {
 
+  using onex::archive::NosArchive;
   using onex::downloader::GameforgeDownloader;
 
   auto error_text(onex::Error e) -> std::string {
@@ -18,6 +22,10 @@ namespace {
         return "archive not found";
       case onex::Error::kAmbiguousMatch:
         return "ambiguous archive name (multiple manifest entries match)";
+      case onex::Error::kFileNotFound:
+        return "file not found";
+      case onex::Error::kReadError:
+        return "read error";
       case onex::Error::kInvalidHeader:
         return "invalid manifest";
       case onex::Error::kIoError:
@@ -28,7 +36,7 @@ namespace {
   }
 
   auto run_download(const std::string& output_dir, const std::string& build_id,
-                    const std::vector<std::string>& archive_names) -> int {
+                    const std::vector<std::string>& archive_names, bool all) -> int {
     GameforgeDownloader downloader{"nostale", build_id};
 
     auto manifest = downloader.fetch_manifest();
@@ -38,8 +46,18 @@ namespace {
       return 1;
     }
 
+    auto names = archive_names;
+    if (all) {
+      names.clear();
+      for (const auto& entry : manifest.value.entries) {
+        if (!entry.folder) {
+          names.push_back(entry.file);
+        }
+      }
+    }
+
     auto had_error = false;
-    for (const auto& name : archive_names) {
+    for (const auto& name : names) {
       auto resolved = downloader.resolve(manifest.value.entries, name);
       if (!resolved) {
         std::cerr << "OnexExplorerCli: error: " << name << ": " << error_text(resolved.error)
@@ -67,6 +85,36 @@ namespace {
     return had_error ? 1 : 0;
   }
 
+  auto run_extract(const std::string& filepath) -> int {
+    auto result = NosArchive::open(filepath);
+    if (!result) {
+      std::cerr << "OnexExplorerCli: error: " << filepath << ": " << error_text(result.error)
+                << "\n";
+      return 1;
+    }
+
+    auto& h = result.value.header();
+    auto addr = 0u;
+
+    // Print hex bytes
+    std::printf("%08x: ", addr);
+    for (size_t i = 0; i < h.size(); ++i) {
+      std::printf("%02x", static_cast<unsigned>(h[i]));
+      if (i < h.size() - 1) {
+        std::putchar(' ');
+      }
+    }
+    std::printf("  ");
+
+    // Print ASCII representation
+    for (auto b : h) {
+      std::putchar(std::isprint(static_cast<unsigned char>(b)) ? static_cast<char>(b) : '.');
+    }
+    std::putchar('\n');
+
+    return 0;
+  }
+
 }  // namespace
 
 auto main(int argc, char** argv) -> int {
@@ -78,6 +126,7 @@ auto main(int argc, char** argv) -> int {
   // download subcommand
   std::string output_dir;
   std::string build_id = "latest";
+  bool all = false;
   std::vector<std::string> archive_names;
 
   auto* download = app.add_subcommand("download", "Fetch .NOS archives from the Gameforge CDN");
@@ -85,9 +134,15 @@ auto main(int argc, char** argv) -> int {
       ->required();
   download->add_option("--build-id", build_id, "Build version (default: latest)")
       ->capture_default_str();
+  download->add_flag("--all", all, "Download all archives from the manifest");
   download->add_option("archive-names", archive_names, "Archive names from the Gameforge manifest")
-      ->required()
       ->expected(-1);
+
+  // extract subcommand
+  std::string extract_path;
+  auto* extract
+      = app.add_subcommand("extract", "Display the header of a .NOS archive as a hex dump");
+  extract->add_option("file", extract_path, "Path to a .NOS archive file")->required();
 
   CLI11_PARSE(app, argc, argv);
 
@@ -97,7 +152,11 @@ auto main(int argc, char** argv) -> int {
   }
 
   if (download->parsed()) {
-    return run_download(output_dir, build_id, archive_names);
+    return run_download(output_dir, build_id, archive_names, all);
+  }
+
+  if (extract->parsed()) {
+    return run_extract(extract_path);
   }
 
   std::cout << app.help() << std::endl;
