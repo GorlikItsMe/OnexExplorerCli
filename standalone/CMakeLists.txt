@@ -12,8 +12,6 @@ include(../cmake/CPM.cmake)
 
 CPMAddPackage("gh:CLIUtils/CLI11@2.4.2")
 
-CPMAddPackage("gh:nlohmann/json@3.11.3")
-
 CPMAddPackage(NAME OnexExplorer SOURCE_DIR ${CMAKE_CURRENT_LIST_DIR}/..)
 
 find_package(CURL REQUIRED)
@@ -26,7 +24,4 @@ add_executable(${PROJECT_NAME} ${sources})
 
 set_target_properties(${PROJECT_NAME} PROPERTIES CXX_STANDARD 23 OUTPUT_NAME "OnexExplorerCli")
 
-target_link_libraries(
-  ${PROJECT_NAME} OnexExplorer::OnexExplorer CLI11::CLI11 nlohmann_json::nlohmann_json
-  CURL::libcurl
-)
+target_link_libraries(${PROJECT_NAME} OnexExplorer::OnexExplorer CLI11::CLI11 CURL::libcurl)

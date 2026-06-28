@@ -33,13 +33,6 @@ CPMAddPackage("gh:nlohmann/json@3.11.3")
 
 find_package(CURL REQUIRED)
 
-CPMAddPackage(
-  NAME zlib
-  GIT_TAG v1.3.1
-  GITHUB_REPOSITORY madler/zlib EXCLUDE_FROM_ALL YES
-  OPTIONS "ZLIB_BUILD_EXAMPLES OFF"
-)
-
 # ---- Add source files ----
 
 # Note: globbing sources is considered bad practice as CMake's generators may not detect new files
@@ -60,13 +53,13 @@ target_compile_definitions(
   ${PROJECT_NAME} PRIVATE "$<$<COMPILE_LANG_AND_ID:CXX,MSVC>:_CRT_SECURE_NO_WARNINGS>"
 )
 
-# Link dependencies
-target_link_libraries(${PROJECT_NAME} PRIVATE fmt::fmt)
-
-# download.cpp needs CURL and nlohmann_json headers, but linking them as PRIVATE targets breaks the
-# install export. Use include dirs instead.
-target_include_directories(
-  ${PROJECT_NAME} PRIVATE ${CURL_INCLUDE_DIRS} ${nlohmann_json_SOURCE_DIR}/include
+# Link dependencies. CURL and nlohmann_json are only linked for the build interface so the install
+# export doesn't require downstream consumers to find them (they must do so themselves).
+target_link_libraries(
+  ${PROJECT_NAME}
+  PUBLIC "$<BUILD_INTERFACE:CURL::libcurl>"
+  PUBLIC "$<BUILD_INTERFACE:nlohmann_json::nlohmann_json>"
+  PRIVATE fmt::fmt
 )
 
 target_include_directories(
