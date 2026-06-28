@@ -23,16 +23,67 @@ TEST_CASE("NosArchive::open reads 16-byte header from a real NOS file") {
   CHECK(result.value.header().size() == 16);
 }
 
-TEST_CASE("NosArchive::open header contains known bytes for NSetcData") {
-  auto path = ensure_fixture("NostaleData\\NSetcData.NOS");
+TEST_CASE("NosArchive::open header contains known bytes for NStpData01.NOS") {
+  auto path = ensure_fixture("NostaleData\\NStpData01.NOS");
 
   auto result = onex::archive::NosArchive::open(path);
   REQUIRE(result);
 
   auto& h = result.value.header();
-  CHECK(h[0] == 0x02);
-  CHECK(h[12] == 'M');
-  CHECK(h[13] == 'i');
-  CHECK(h[14] == 'n');
-  CHECK(h[15] == 'i');
+  const std::vector<uint8_t> expected = {
+      'N', 'T', ' ', 'D', 'a', 't', 'a', ' ', '0', '7', 0x00, 0x00
+  };
+  CHECK(std::equal(expected.begin(), expected.end(), h.begin()));
+}
+
+TEST_CASE("NosArchive::open header contains known bytes for NSipData.NOS") {
+  auto path = ensure_fixture("NostaleData\\NSipData.NOS");
+
+  auto result = onex::archive::NosArchive::open(path);
+  REQUIRE(result);
+
+  auto& h = result.value.header();
+  const std::vector<uint8_t> expected = {
+      'N', 'T', ' ', 'D', 'a', 't', 'a', ' ', '2', '4', 0x00, 0x00
+  };
+  CHECK(std::equal(expected.begin(), expected.end(), h.begin()));
+}
+
+TEST_CASE("NosArchive::open header does not contain known bytes for NSgtdData.NOS") {
+  auto path = ensure_fixture("NostaleData\\NSgtdData.NOS");
+
+  auto result = onex::archive::NosArchive::open(path);
+  REQUIRE(result);
+
+  auto& h = result.value.header();
+  const std::vector<uint8_t> not_expected = {
+      'N', 'T', ' ', 'D', 'a', 't', 'a'
+  };
+  CHECK(std::equal(not_expected.begin(), not_expected.end(), h.begin()) == false);
+}
+
+TEST_CASE("NosArchive::open header contains known bytes for NSmnData.NOS") {
+  auto path = ensure_fixture("NostaleData\\NSmnData.NOS");
+
+  auto result = onex::archive::NosArchive::open(path);
+  REQUIRE(result);
+
+  auto& h = result.value.header();
+  const std::vector<uint8_t> expected = {
+      'C', 'C', 'I', 'N', 'F', ' ', 'V', '1', '.', '2', '0',
+  };
+  CHECK(std::equal(expected.begin(), expected.end(), h.begin()));
+}
+
+TEST_CASE("NosArchive::open header contains known bytes for NS4BbData.NOS") {
+  auto path = ensure_fixture("NostaleData\\NS4BbData.NOS");
+
+  auto result = onex::archive::NosArchive::open(path);
+  REQUIRE(result);
+
+  auto& h = result.value.header();
+  const std::vector<uint8_t> expected = {
+      '3', '2', 'G', 'B', 'S', ' ', 'V', '1', '.', '0',
+  };
+  CHECK(std::equal(expected.begin(), expected.end(), h.begin()));
 }
