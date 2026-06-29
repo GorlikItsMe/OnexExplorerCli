@@ -92,10 +92,6 @@ namespace {
     return had_error ? 1 : 0;
   }
 
-  auto is_text_type(onex::archive::EntryType type) -> bool {
-    return type == onex::archive::EntryType::TextDat || type == onex::archive::EntryType::TextLst;
-  }
-
   auto run_extract(const std::string& filepath, const std::string& output_dir,
                    const std::vector<int>& entry_ids) -> int {
     auto result = NosArchive::open(filepath);
@@ -120,19 +116,6 @@ namespace {
       }
 
       auto out_name = entry.name;
-      if (is_text_type(entry.type)) {
-        for (auto* ext : {".dat", ".lst"}) {
-          if (out_name.ends_with(ext)) {
-            out_name.replace(out_name.size() - 4, 4, ".txt");
-            break;
-          }
-        }
-        if (out_name == entry.name) {
-          out_name += ".txt";
-        }
-      } else {
-        out_name += ".bin";
-      }
       auto out_path = std::filesystem::path(output_dir) / out_name;
       std::filesystem::create_directories(out_path.parent_path());
 
