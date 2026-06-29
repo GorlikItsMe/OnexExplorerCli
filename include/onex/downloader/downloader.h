@@ -31,6 +31,13 @@ namespace onex::downloader {
     auto download_file(const BuildInfoEntry& entry, const std::string& target_dir)
         -> Result<FileStatus>;
 
+    /// Download multiple files in parallel using a thread pool.
+    /// Returns one result per entry in the same order as the input vector.
+    /// Folders and empty entries are skipped with FileStatus::kSkipped.
+    auto download_files(const std::vector<BuildInfoEntry>& entries,
+                        const std::string& target_dir,
+                        int max_concurrency = 4) -> std::vector<Result<FileStatus>>;
+
   private:
     auto make_manifest_url() const -> std::string;
     auto verify_sha1(const std::string& path, const std::string& expected_hex) -> bool;

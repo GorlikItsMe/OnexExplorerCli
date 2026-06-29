@@ -63,28 +63,40 @@ namespace {
       }
     }
 
+    // Resolve all entries first
+    std::vector<onex::downloader::BuildInfoEntry> resolved;
+    resolved.reserve(names.size());
     auto had_error = false;
     for (const auto& name : names) {
-      auto resolved = downloader.resolve(manifest.value.entries, name);
-      if (!resolved) {
-        std::cerr << "OnexExplorerCli: error: " << name << ": " << error_text(resolved.error)
+      auto r = downloader.resolve(manifest.value.entries, name);
+      if (!r) {
+        std::cerr << "OnexExplorerCli: error: " << name << ": " << error_text(r.error)
                   << "\n";
         had_error = true;
         continue;
       }
+      resolved.push_back(std::move(r.value));
+    }
 
-      auto status = downloader.download_file(resolved.value, output_dir);
+    if (resolved.empty()) {
+      return had_error ? 1 : 0;
+    }
+
+    // Download all resolved entries in parallel
+    auto statuses = downloader.download_files(resolved, output_dir);
+    for (std::size_t i = 0; i < resolved.size(); ++i) {
+      const auto& status = statuses[i];
       if (!status) {
-        std::cerr << "OnexExplorerCli: error: " << resolved.value.file << ": "
+        std::cerr << "OnexExplorerCli: error: " << resolved[i].file << ": "
                   << error_text(status.error) << "\n";
         had_error = true;
         continue;
       }
 
       if (status.value == GameforgeDownloader::FileStatus::kSkipped) {
-        std::cout << "Skipped " << resolved.value.file << " (already up to date)\n";
+        std::cout << "Skipped " << resolved[i].file << " (already up to date)\n";
       } else {
-        std::cout << "Downloaded " << resolved.value.file << " (" << resolved.value.size
+        std::cout << "Downloaded " << resolved[i].file << " (" << resolved[i].size
                   << " bytes)\n";
       }
     }

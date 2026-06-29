@@ -2,8 +2,10 @@
 #include <onex/downloader/sha1.h>
 
 #include <algorithm>
+#include <atomic>
 #include <filesystem>
 #include <string>
+#include <thread>
 #include <vector>
 
 namespace onex::downloader {
@@ -121,6 +123,90 @@ namespace onex::downloader {
     }
 
     return Result<FileStatus>{FileStatus::kDownloaded, Error::kNone};
+  }
+
+  auto GameforgeDownloader::download_files(const std::vector<BuildInfoEntry>& entries,
+                                            const std::string& target_dir,
+                                            int max_concurrency) -> std::vector<Result<FileStatus>> {
+    // Collect entries that actually need downloading
+    struct WorkItem {
+      const BuildInfoEntry* entry;
+      std::size_t index;
+    };
+    std::vector<WorkItem> work;
+    work.reserve(entries.size());
+    for (std::size_t i = 0; i < entries.size(); ++i) {
+      const auto& e = entries[i];
+      if (!e.folder && !e.file.empty()) {
+        work.push_back({&e, i});
+      }
+    }
+
+    // Pre-fill results with skipped for folders/empty entries
+    std::vector<Result<FileStatus>> results(entries.size());
+    for (std::size_t i = 0; i < entries.size(); ++i) {
+      const auto& e = entries[i];
+      if (e.folder || e.file.empty()) {
+        results[i] = Result<FileStatus>{FileStatus::kSkipped, Error::kNone};
+      }
+    }
+
+    if (work.empty()) {
+      return results;
+    }
+
+    std::atomic<std::size_t> next_index{0};
+
+    auto worker = [&]() {
+      auto http = impl_->http->clone();
+      while (true) {
+        auto idx = next_index.fetch_add(1, std::memory_order_relaxed);
+        if (idx >= work.size()) {
+          break;
+        }
+        const auto& item = work[idx];
+        const auto& entry = *item.entry;
+
+        auto output_path = fs::path(target_dir) / manifest_relative_path(entry.file);
+
+        if (fs::exists(output_path) && verify_sha1(output_path.string(), entry.sha1)) {
+          results[item.index] = Result<FileStatus>{FileStatus::kSkipped, Error::kNone};
+          continue;
+        }
+
+        std::error_code ec;
+        fs::create_directories(output_path.parent_path(), ec);
+        if (ec) {
+          results[item.index] = Result<FileStatus>{FileStatus::kSkipped, Error::kIoError};
+          continue;
+        }
+
+        auto url = std::string{"http://patches.gameforge.com"} + entry.path;
+        auto resp = http->download(url, output_path.string());
+        if (resp.status_code != 200) {
+          results[item.index] = Result<FileStatus>{FileStatus::kSkipped, Error::kNetworkError};
+          continue;
+        }
+
+        results[item.index] = Result<FileStatus>{FileStatus::kDownloaded, Error::kNone};
+      }
+    };
+
+    auto n_threads = std::min(static_cast<std::size_t>(max_concurrency), work.size());
+    if (n_threads < 1) {
+      n_threads = 1;
+    }
+
+    std::vector<std::thread> threads;
+    threads.reserve(n_threads);
+    for (std::size_t i = 0; i < n_threads; ++i) {
+      threads.emplace_back(worker);
+    }
+    for (auto& t : threads) {
+      t.join();
+    }
+
+    return results;
   }
 
   auto GameforgeDownloader::make_manifest_url() const -> std::string {

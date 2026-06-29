@@ -55,6 +55,10 @@ namespace onex::downloader {
     curl_global_cleanup();
   }
 
+  auto CurlHttpClient::clone() -> std::unique_ptr<HttpClient> {
+    return std::make_unique<CurlHttpClient>();
+  }
+
   auto CurlHttpClient::get(const std::string& url) -> HttpResponse {
     HttpResponse resp;
 
