@@ -7,6 +7,7 @@
 #include <filesystem>
 #include <fstream>
 #include <sstream>
+#include <string_view>
 
 #include "fixture.h"
 
@@ -220,6 +221,31 @@ TEST_CASE(
   auto result = fmt.parse_entry_table(buf, stream);
   CHECK_FALSE(result);
   CHECK(result.error == onex::Error::kInvalidFormat);
+}
+
+// ---------------------------------------------------------------------------
+// Text archive integration – real file decode
+// ---------------------------------------------------------------------------
+
+TEST_CASE("NosArchive::read_entry on NScliData.NOS first entry contains 'Info'") {
+  auto path = ensure_fixture("NostaleData\\NScliData.NOS");
+
+  auto result = onex::archive::NosArchive::open(path);
+  REQUIRE(result);
+
+  auto entries = result.value.entries();
+  REQUIRE(entries.size() > 0);
+  CHECK(entries[0].type == onex::archive::EntryType::TextDat);
+  CHECK(entries[0].name == "conststring.dat");
+
+  auto data = result.value.read_entry(0);
+  REQUIRE(data);
+
+  // The decrypted content should contain readable game strings
+  std::string_view content(reinterpret_cast<const char*>(data.value.data()), data.value.size());
+  CHECK(content.find("Info") != std::string_view::npos);
+  CHECK(content.find("OK") != std::string_view::npos);
+  CHECK(content.find("Name") != std::string_view::npos);
 }
 
 // ---------------------------------------------------------------------------
