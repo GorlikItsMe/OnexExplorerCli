@@ -1,4 +1,5 @@
 #include <onex/archive/entry.h>
+#include <onex/archive/image/entry_image.h>
 #include <onex/archive/nos_archive.h>
 #include <onex/downloader/downloader.h>
 #include <onex/version.h>
@@ -115,7 +116,28 @@ namespace {
         return;
       }
 
+      const bool is_image = entry.type == onex::archive::EntryType::Texture
+                            || entry.type == onex::archive::EntryType::Icon
+                            || entry.type == onex::archive::EntryType::Image4B
+                            || entry.type == onex::archive::EntryType::TileGrid;
+
       auto out_name = entry.name;
+      const uint8_t* write_data = data.value.data();
+      auto write_size = data.value.size();
+      std::vector<uint8_t> png_bytes;
+
+      if (is_image) {
+        auto png = onex::archive::decode_entry_to_png(data.value, entry.type);
+        if (png) {
+          png_bytes = std::move(png.value);
+          write_data = png_bytes.data();
+          write_size = png_bytes.size();
+          out_name += ".png";
+        } else {
+          out_name += ".bin";
+        }
+      }
+
       auto out_path = std::filesystem::path(output_dir) / out_name;
       std::filesystem::create_directories(out_path.parent_path());
 
@@ -125,9 +147,9 @@ namespace {
         had_error = true;
         return;
       }
-      out.write(reinterpret_cast<const char*>(data.value.data()),
-                static_cast<std::streamsize>(data.value.size()));
-      std::cout << "Extracted " << out_name << " (" << data.value.size() << " bytes)\n";
+      out.write(reinterpret_cast<const char*>(write_data),
+                static_cast<std::streamsize>(write_size));
+      std::cout << "Extracted " << out_name << " (" << write_size << " bytes)\n";
     };
 
     if (entry_ids.empty()) {

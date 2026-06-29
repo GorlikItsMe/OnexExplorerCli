@@ -35,7 +35,9 @@ endif()
 
 file(GLOB sources CONFIGURE_DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/source/*.cpp)
 add_executable(${PROJECT_NAME} ${sources})
-target_link_libraries(${PROJECT_NAME} doctest::doctest OnexExplorer::OnexExplorer zlibstatic)
+target_link_libraries(
+  ${PROJECT_NAME} doctest::doctest OnexExplorer::OnexExplorer zlibstatic lodepng
+)
 target_compile_definitions(
   ${PROJECT_NAME} PRIVATE ONEX_PROJECT_SOURCE_DIR="${CMAKE_CURRENT_SOURCE_DIR}/.."
 )
