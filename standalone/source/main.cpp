@@ -119,8 +119,21 @@ namespace {
         return;
       }
 
-      auto ext = is_text_type(entry.type) ? ".txt" : ".bin";
-      auto out_path = std::filesystem::path(output_dir) / (entry.name + ext);
+      auto out_name = entry.name;
+      if (is_text_type(entry.type)) {
+        for (auto* ext : {".dat", ".lst"}) {
+          if (out_name.ends_with(ext)) {
+            out_name.replace(out_name.size() - 4, 4, ".txt");
+            break;
+          }
+        }
+        if (out_name == entry.name) {
+          out_name += ".txt";
+        }
+      } else {
+        out_name += ".bin";
+      }
+      auto out_path = std::filesystem::path(output_dir) / out_name;
       std::filesystem::create_directories(out_path.parent_path());
 
       std::ofstream out{out_path, std::ios::binary};
@@ -131,7 +144,7 @@ namespace {
       }
       out.write(reinterpret_cast<const char*>(data.value.data()),
                 static_cast<std::streamsize>(data.value.size()));
-      std::cout << "Extracted " << entry.name << ext << " (" << data.value.size() << " bytes)\n";
+      std::cout << "Extracted " << out_name << " (" << data.value.size() << " bytes)\n";
     };
 
     if (entry_ids.empty()) {
