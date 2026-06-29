@@ -5,46 +5,168 @@
 [![Actions Status](https://github.com/GorlikItsMe/OnexExplorerCli/workflows/Install/badge.svg)](https://github.com/GorlikItsMe/OnexExplorerCli/actions)
 
 <p align="center">
-  <img src="https://repository-images.githubusercontent.com/254842585/4dfa7580-7ffb-11ea-99d0-46b8fe2f4170" height="175" width="auto" />
+  <img src=".assets/logo.png" height="256" width="256" />
 </p>
 
 # OnexExplorerCli
 
-OnexExplorer is an open-source tool for unpacking and repacking .NOS data files from the game NosTale. It can open almost all .NOS files, allowing you to view, export, replace, and even add your own content. It's based on [OnexExplorer](https://github.com/Pumba98/OnexExplorer) which has the same capabilities. Huge thanks to Pumba98 for their work.
+OnexExplorerCli is an open-source command-line tool for unpacking and repacking .NOS data files from the game NosTale. It is based on the original [OnexExplorer](https://github.com/Pumba98/OnexExplorer) GUI application. Huge thanks to [Pumba98](https://github.com/Pumba98) for his work.
 
-> [!WARNING]  
-> This project is a work-in-progress and is not finished yet. Everything can change. Check ## Features to see what actually works
+> [!WARNING]
+> This project is a work-in-progress and not yet finished. Everything can change.
 
 ## Features
 
-- to be added
+- **List entries** — display the entry table of any .NOS archive with type, size, and compression info; JSON output via `--json`
+- **Show entry details** — detailed information about individual entries; JSON output via `--json`
+- **Extract entries** — decompress/decrypt entries to disk; images are auto-converted to PNG
+- **Download from CDN** — fetch .NOS archives directly from the Gameforge CDN with SHA1 verification
 
-## Download
 
-The `download` subcommand fetches `.NOS` archive files from the Gameforge CDN.
-It downloads the patch manifest, resolves each requested archive name against it, and streams the file directly to disk.
+## Supported .NOS file formats
 
-```bash
-OnexExplorerCli download [-o <output-dir>] [--build-id <id>] <archive-names...>
+| Archive name | Description |
+|---|---|
+| NSgtdData | Items, quests, skills, mobs etc. data |
+| NSlangData | `_code_lang_list` (ztsXXXe) |
+| NScliData | `constring.dat` |
+| NSetcData | Word list for Memory & TabooStr.lst |
+| NS4BbData | Big images |
+| NSipData | Icons |
+| NStpData | Map and model textures |
+| NStpeData | Effect textures |
+| NStpuData | UI textures |
+| NStcData | Map grids |
+
+## Unsupported or partially supported .NOS file formats
+
+The following archives are **not yet supported**:
+
+| Archive name | Description |
+|---|---|
+| NSmpData | Monster-related sprites |
+| NSppData | Player-related sprites |
+| NSmnData | Mob-related sprite infos |
+| NSpnData | Player-related sprite infos |
+| NSmcData | Monster-related animation kits |
+| NSpcData | Player-related animation kits |
+| NStgData | 3D Models |
+| NStgeData | 3D VFX models |
+| NStuData | Map configs |
+| NSeffData | VFX configs |
+| NStsData | — |
+| NStkData | — |
+| NSemData | — |
+| NSesData | — |
+| NSedData | — |
+| NSgrdData | — |
+| NSpmData | — |
+
+> [!NOTE]
+> Some archives can be **opened and listed** but **extraction** of entry bodies may fail or produce incorrect data if the entry type or compression is not yet handled.
+
+## How to use it
+
+### Commands
+
+```
+OnexExplorerCli download [-o <output-dir>] [--build-id <id>] [--all] <archive-names...>
+OnexExplorerCli extract <file> -o <output-dir> [--entry <ids...>]
+OnexExplorerCli list <file> [--json]
+OnexExplorerCli info <file> [--entry <ids...>] [--json]
 ```
 
-- `-o, --output <dir>` (required) — target directory for downloaded files.
-- `--build-id <id>` — build version to fetch from (default: `latest`).
-- `archive-names...` (required) — one or more archive names from the Gameforge manifest. Resolution tries an exact `file`-field match first, then falls back to a bare filename match. An error is reported if a name matches more than one entry.
+### Global options
 
-Files already present on disk with a matching SHA1 are skipped.
+| Option          | Description                          |
+|-----------------|--------------------------------------|
+| `-h, --help`    | Print help message and exit          |
+| `-v, --version` | Print the version number and exit    |
 
-### Example
+### `download` — fetch archives from the Gameforge CDN
 
+Fetches `.NOS` archive files from the Gameforge CDN. Downloads the patch manifest, resolves each archive name against it, and streams the file to disk with SHA1 verification.
+
+| Option                 | Description                                          |
+|------------------------|------------------------------------------------------|
+| `-o, --output <dir>`   | Target directory for downloaded files (required)     |
+| `--build-id <id>`      | Build version to fetch from (default: `latest`)      |
+| `--all`                | Download all archives in the manifest                |
+| `archive-names...`     | One or more archive names from the manifest          |
+
+Resolution tries an exact `file`-field match first, then falls back to a bare filename match. An error is reported if a name matches more than one manifest entry. Files already present on disk with a matching SHA1 are skipped.
+
+**Examples:**
 ```bash
+# Download specific archives
 OnexExplorerCli download -o ./downloads NSipData.NOS NostaleData\\NSipData.NOS
+
+# Download all archives from a specific build
+OnexExplorerCli download -o ./downloads --build-id 12345 --all
 ```
 
-## Usage
+### `extract` — extract entries from a .NOS archive
 
-### Build and run the standalone target
+Reads a .NOS archive and extracts entries to disk. Image entries (Texture, Icon, Image4B, TileGrid) are automatically converted to PNG.
 
-Use the following command to build and run the executable target.
+| Option               | Description                                        |
+|----------------------|----------------------------------------------------|
+| `file`               | Path to the .NOS file (required)                   |
+| `-o, --output <dir>` | Output directory (required)                        |
+| `--entry <ids...>`   | Entry IDs to extract (repeatable; default: all)    |
+
+**Examples:**
+```bash
+# Extract all entries
+OnexExplorerCli extract path/to/file.NOS -o ./output
+
+# Extract specific entries by ID
+OnexExplorerCli extract path/to/file.NOS -o ./output --entry 0 1 2
+```
+
+### `list` — list entries in a .NOS archive
+
+Displays the entry table of a .NOS archive: ID, name, type, compression status, and sizes.
+
+| Option    | Description                                    |
+|-----------|------------------------------------------------|
+| `file`    | Path to the .NOS file (required)               |
+| `--json`  | Output as a JSON array (pipeable)              |
+
+**Examples:**
+```bash
+# Human-readable table
+OnexExplorerCli list path/to/file.NOS
+
+# JSON output (pipeable)
+OnexExplorerCli list path/to/file.NOS --json | jq '.[] | select(.type == "Icon")'
+```
+
+### `info` — show entry details
+
+Displays detailed information about entries in a .NOS archive: ID, name, type, creation date, compression, file offsets, and sizes.
+
+| Option             | Description                                        |
+|--------------------|----------------------------------------------------|
+| `file`             | Path to the .NOS file (required)                   |
+| `--entry <ids...>` | Entry IDs to inspect (repeatable; default: all)    |
+| `--json`           | Output as JSON (single entry or array for multiple)|
+
+**Examples:**
+```bash
+# Show all entries
+OnexExplorerCli info path/to/file.NOS
+
+# Show specific entries
+OnexExplorerCli info path/to/file.NOS --entry 0 1 2
+
+# JSON output for a single entry
+OnexExplorerCli info path/to/file.NOS --entry 0 --json
+```
+
+## Build and run
+
+### Build and run the standalone CLI
 
 ```bash
 cmake -S standalone -B build/standalone
@@ -52,25 +174,20 @@ cmake --build build/standalone
 ./build/standalone/OnexExplorerCli --help
 ```
 
-### Build and run test suite
-
-Use the following commands from the project's root directory to run the test suite.
+### Build and run the test suite
 
 ```bash
 cmake -S test -B build/test
 cmake --build build/test
 CTEST_OUTPUT_ON_FAILURE=1 cmake --build build/test --target test
 
-# or simply call the executable: 
+# or run the test executable directly:
 ./build/test/OnexExplorerTests
 ```
 
 To collect code coverage information, run CMake with the `-DENABLE_TEST_COVERAGE=1` option.
 
 ### Run clang-format
-
-Use the following commands from the project's root directory to check and fix C++ and CMake source style.
-This requires _clang-format_, _cmake-format_ and _pyyaml_ to be installed on the current system.
 
 ```bash
 cmake -S test -B build/test
@@ -83,7 +200,7 @@ cmake --build build/test --target fix-format
 ```
 
 See [Format.cmake](https://github.com/TheLartians/Format.cmake) for details.
-These dependencies can be easily installed using pip.
+Dependencies can be installed via pip:
 
 ```bash
 pip install clang-format==14.0.6 cmake_format==0.6.11 pyyaml
@@ -92,7 +209,7 @@ pip install clang-format==14.0.6 cmake_format==0.6.11 pyyaml
 ### Build the documentation
 
 The documentation is automatically built and [published](https://gorlikitsme.github.io/OnexExplorerCli) whenever a [GitHub Release](https://help.github.com/en/github/administering-a-repository/managing-releases-in-a-repository) is created.
-To manually build documentation, call the following command.
+To manually build documentation:
 
 ```bash
 cmake -S documentation -B build/doc
@@ -101,12 +218,9 @@ cmake --build build/doc --target GenerateDocs
 open build/doc/doxygen/html/index.html
 ```
 
-To build the documentation locally, you will need Doxygen, jinja2 and Pygments installed on your system.
+You will need Doxygen, jinja2 and Pygments installed on your system.
 
 ### Build everything at once
-
-The project also includes an `all` directory that allows building all targets at the same time.
-This is useful during development, as it exposes all subprojects to your IDE and avoids redundant builds of the library.
 
 ```bash
 cmake -S all -B build
@@ -136,6 +250,7 @@ ln -sf build/standalone/compile_commands.json compile_commands.json
 Then restart clangd in VS Code (`Ctrl+Shift+P` → "clangd: Restart").
 
 If using the `all` build, point to that instead:
+
 ```bash
 cmake -S all -B build -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
 ln -sf build/compile_commands.json compile_commands.json
@@ -143,4 +258,4 @@ ln -sf build/compile_commands.json compile_commands.json
 
 ## Related projects and alternatives
 
-- [**OnexExplorer**](https://github.com/Pumba98/OnexExplorer): Original app where most of the work was made.
+- [**OnexExplorer**](https://github.com/Pumba98/OnexExplorer): Original Qt GUI application where most of the work was made.
