@@ -18,6 +18,7 @@ namespace onex::downloader {
     virtual ~HttpClient() = default;
     virtual auto get(const std::string& url) -> HttpResponse = 0;
     virtual auto download(const std::string& url, const std::string& path) -> HttpResponse = 0;
+    virtual auto clone() -> std::unique_ptr<HttpClient> = 0;
   };
 
   class CurlHttpClient : public HttpClient {
@@ -26,6 +27,7 @@ namespace onex::downloader {
     ~CurlHttpClient() override;
     auto get(const std::string& url) -> HttpResponse override;
     auto download(const std::string& url, const std::string& path) -> HttpResponse override;
+    auto clone() -> std::unique_ptr<HttpClient> override;
 
   private:
     struct Impl;
