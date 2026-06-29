@@ -25,6 +25,21 @@ CPMAddPackage(
   OPTIONS "ZLIB_BUILD_EXAMPLES OFF"
 )
 
+# lodepng is fetched independently so the test builds under TEST_INSTALLED_VERSION=ON (where the
+# root CMakeLists is not processed). CPM deduplicates when the root is also pulled in as a
+# subproject.
+CPMAddPackage(
+  NAME lodepng
+  GITHUB_REPOSITORY lvandeve/lodepng
+  GIT_TAG ed6fe5825c6a4fbb7f58ab35a4231c7543cd452a
+)
+if(lodepng_ADDED)
+  add_library(lodepng STATIC ${lodepng_SOURCE_DIR}/lodepng.cpp)
+  target_include_directories(lodepng SYSTEM PUBLIC ${lodepng_SOURCE_DIR})
+  target_compile_features(lodepng PUBLIC cxx_std_17)
+  set_target_properties(lodepng PROPERTIES POSITION_INDEPENDENT_CODE ON)
+endif()
+
 if(TEST_INSTALLED_VERSION)
   find_package(OnexExplorer REQUIRED)
 else()
@@ -35,7 +50,9 @@ endif()
 
 file(GLOB sources CONFIGURE_DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/source/*.cpp)
 add_executable(${PROJECT_NAME} ${sources})
-target_link_libraries(${PROJECT_NAME} doctest::doctest OnexExplorer::OnexExplorer zlibstatic)
+target_link_libraries(
+  ${PROJECT_NAME} doctest::doctest OnexExplorer::OnexExplorer zlibstatic lodepng
+)
 target_compile_definitions(
   ${PROJECT_NAME} PRIVATE ONEX_PROJECT_SOURCE_DIR="${CMAKE_CURRENT_SOURCE_DIR}/.."
 )

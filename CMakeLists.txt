@@ -48,6 +48,20 @@ CPMAddPackage(
   OPTIONS "JSON_BuildTests OFF" "JSON_Install ON"
 )
 
+# lodepng is a single-file library without a CMake target, so we fetch the source via CPM and build
+# the target ourselves.
+CPMAddPackage(
+  NAME lodepng
+  GITHUB_REPOSITORY lvandeve/lodepng
+  GIT_TAG ed6fe5825c6a4fbb7f58ab35a4231c7543cd452a
+)
+if(lodepng_ADDED)
+  add_library(lodepng STATIC ${lodepng_SOURCE_DIR}/lodepng.cpp)
+  target_include_directories(lodepng SYSTEM PUBLIC ${lodepng_SOURCE_DIR})
+  target_compile_features(lodepng PUBLIC cxx_std_17)
+  set_target_properties(lodepng PROPERTIES POSITION_INDEPENDENT_CODE ON)
+endif()
+
 # ---- Add source files ----
 
 # Note: globbing sources is considered bad practice as CMake's generators may not detect new files
@@ -67,7 +81,7 @@ target_compile_options(${PROJECT_NAME} PUBLIC "$<$<COMPILE_LANG_AND_ID:CXX,MSVC>
 
 target_link_libraries(
   ${PROJECT_NAME} PRIVATE fmt::fmt CURL::libcurl nlohmann_json::nlohmann_json
-                          $<BUILD_INTERFACE:zlibstatic>
+                          $<BUILD_INTERFACE:zlibstatic> $<BUILD_INTERFACE:lodepng>
 )
 
 target_include_directories(
