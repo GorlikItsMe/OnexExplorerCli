@@ -115,7 +115,8 @@ namespace {
         return;
       }
 
-      auto out_path = std::filesystem::path(output_dir) / (entry.name + ".bin");
+      auto out_name = entry.name;
+      auto out_path = std::filesystem::path(output_dir) / out_name;
       std::filesystem::create_directories(out_path.parent_path());
 
       std::ofstream out{out_path, std::ios::binary};
@@ -126,8 +127,7 @@ namespace {
       }
       out.write(reinterpret_cast<const char*>(data.value.data()),
                 static_cast<std::streamsize>(data.value.size()));
-      std::cout << "Extracted " << entry.name << ".bin"
-                << " (" << data.value.size() << " bytes)\n";
+      std::cout << "Extracted " << out_name << " (" << data.value.size() << " bytes)\n";
     };
 
     if (entry_ids.empty()) {
@@ -166,6 +166,10 @@ namespace {
         return "Image4B";
       case onex::archive::EntryType::TileGrid:
         return "TileGrid";
+      case onex::archive::EntryType::TextDat:
+        return "TextDat";
+      case onex::archive::EntryType::TextLst:
+        return "TextLst";
       case onex::archive::EntryType::Unknown:
         return "Unknown";
     }

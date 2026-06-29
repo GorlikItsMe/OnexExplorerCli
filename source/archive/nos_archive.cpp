@@ -44,7 +44,8 @@ namespace onex::archive {
 
     const auto& entry = entries_[index];
 
-    auto data_offset = static_cast<std::streamoff>(entry.offset) + kEntryHeaderSize;
+    bool is_text = entry.type == EntryType::TextDat || entry.type == EntryType::TextLst;
+    auto data_offset = static_cast<std::streamoff>(entry.offset) + (is_text ? 0 : kEntryHeaderSize);
     stream_.seekg(data_offset);
     if (!stream_) {
       return {{}, Error::kReadError};
@@ -56,20 +57,21 @@ namespace onex::archive {
       return {{}, Error::kReadError};
     }
 
-    if (!entry.compressed) {
-      return {std::move(compressed)};
+    bool needs_decode = entry.compressed || is_text;
+    if (needs_decode && entry.codec) {
+      auto decompressed = entry.codec->decode(compressed);
+      if (!decompressed) {
+        return {std::move(decompressed.value), decompressed.error};
+      }
+
+      if (entry.compressed && decompressed.value.size() != entry.uncompressed_size) {
+        return {{}, Error::kCorruptArchive};
+      }
+
+      return {std::move(decompressed.value)};
     }
 
-    auto decompressed = entry.codec->decode(compressed);
-    if (!decompressed) {
-      return {std::move(decompressed.value), decompressed.error};
-    }
-
-    if (decompressed.value.size() != entry.uncompressed_size) {
-      return {{}, Error::kCorruptArchive};
-    }
-
-    return {std::move(decompressed.value)};
+    return {std::move(compressed)};
   }
 
 }  // namespace onex::archive
