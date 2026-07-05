@@ -1,4 +1,5 @@
 #include <onex/archive/archive_format.h>
+#include <onex/archive/ccinf_archive_format.h>
 #include <onex/archive/text_archive_format.h>
 #include <onex/archive/zlib_archive_format.h>
 
@@ -17,7 +18,9 @@ namespace onex::archive {
         return std::make_unique<ZlibArchiveFormat>();
       }
     }
-    // CCINF is still out of scope (deferred)
+    if (std::equal(header.begin(), header.begin() + 11, "CCINF V1.20")) {
+      return std::make_unique<CcinfArchiveFormat>();
+    }
     // Everything else is treated as TextArchive
     return std::make_unique<TextArchiveFormat>();
   }

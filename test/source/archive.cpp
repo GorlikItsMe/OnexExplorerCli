@@ -102,9 +102,8 @@ TEST_CASE("NosArchive::open header does not contain known bytes for NSgtdData.NO
   CHECK(std::equal(not_expected.begin(), not_expected.end(), h.begin()) == false);
 }
 
-TEST_CASE("NosArchive::open header contains known bytes for NSmnData.NOS" * doctest::skip(true)) {
-  // Skipped until a CCINF-archive format parser is implemented
-  // NSmnData.NOS — 0.5 MB, CCINF V1.20 — currently returns kInvalidFormat
+TEST_CASE("NosArchive::open header contains known bytes for NSmnData.NOS") {
+  // NSmnData.NOS — 0.5 MB, CCINF V1.20
   auto path = ensure_fixture("NostaleData\\NSmnData.NOS");
 
   auto result = onex::archive::NosArchive::open(path);
@@ -115,6 +114,56 @@ TEST_CASE("NosArchive::open header contains known bytes for NSmnData.NOS" * doct
       'C', 'C', 'I', 'N', 'F', ' ', 'V', '1', '.', '2', '0',
   };
   CHECK(std::equal(expected.begin(), expected.end(), h.begin()));
+}
+
+TEST_CASE("NosArchive::read_entry on NSmnData.NOS returns 23-byte entries") {
+  // NSmnData.NOS — 0.5 MB, CCINF V1.20
+  auto path = ensure_fixture("NostaleData\\NSmnData.NOS");
+
+  auto result = onex::archive::NosArchive::open(path);
+  REQUIRE(result);
+
+  auto entries = result.value.entries();
+  // NSmnData has 23286 entries
+  CHECK(entries.size() > 0);
+  CHECK(entries.size() == 23286);
+
+  // All entries are uncompressed sprite info records (variable size)
+  // Minimal entry (all 7 texture parts empty) is 23 bytes;
+  // entries with sprites are larger.
+  for (const auto& e : entries) {
+    CHECK(e.compressed == false);
+    CHECK(e.uncompressed_size >= 23);
+    CHECK(e.compressed_size == e.uncompressed_size);
+  }
+
+  // Verify first entry data can be read and matches expected size
+  auto data = result.value.read_entry(0);
+  REQUIRE(data);
+  CHECK(data.value.size() == entries[0].uncompressed_size);
+}
+
+TEST_CASE("NosArchive::read_entry on NSpnData.NOS returns 23-byte entries") {
+  // NSpnData.NOS — 1.2 MB, CCINF V1.20
+  auto path = ensure_fixture("NostaleData\\NSpnData.NOS");
+
+  auto result = onex::archive::NosArchive::open(path);
+  REQUIRE(result);
+
+  auto entries = result.value.entries();
+  // NSpnData has 9699 entries
+  CHECK(entries.size() == 9699);
+
+  // All entries are uncompressed sprite info records (variable size)
+  for (const auto& e : entries) {
+    CHECK(e.compressed == false);
+    CHECK(e.uncompressed_size >= 23);
+  }
+
+  // Verify first entry data
+  auto data = result.value.read_entry(0);
+  REQUIRE(data);
+  CHECK(data.value.size() == entries[0].uncompressed_size);
 }
 
 // ---------------------------------------------------------------------------
@@ -142,11 +191,10 @@ TEST_CASE("ArchiveFormat::detect returns ZlibArchiveFormat for ITEMS V1.0") {
   REQUIRE(fmt);
 }
 
-TEST_CASE("ArchiveFormat::detect returns TextArchiveFormat for CCINF" * doctest::skip(true)) {
-  // Skipped until a CCINF-archive format parser is implemented
-  // CCINF is not a text archive — TextArchiveFormat is a wrong fallback
+TEST_CASE("ArchiveFormat::detect returns CcinfArchiveFormat for CCINF V1.20") {
+  // CCINF V1.20 is now properly handled by CcinfArchiveFormat
   std::vector<uint8_t> header{'C', 'C', 'I', 'N',  'F',  ' ',  'V',  '1',
-                              '.', '2', '0', 0x00, 0x00, 0x00, 0x00, 0x00};
+                              '.', '2', '0', 0x1a, 0x00, 0x00, 0x00, 0x00};
   auto fmt = onex::archive::ArchiveFormat::detect(header);
   REQUIRE(fmt);
 }
