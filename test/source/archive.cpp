@@ -116,7 +116,7 @@ TEST_CASE("NosArchive::open header contains known bytes for NSmnData.NOS") {
   CHECK(std::equal(expected.begin(), expected.end(), h.begin()));
 }
 
-TEST_CASE("NosArchive::read_entry on NSmnData.NOS returns 23-byte entries") {
+TEST_CASE("NosArchive::read_entry on NSmnData.NOS reads variable-length sprite entries") {
   // NSmnData.NOS — 0.5 MB, CCINF V1.20
   auto path = ensure_fixture("NostaleData\\NSmnData.NOS");
 
@@ -143,7 +143,7 @@ TEST_CASE("NosArchive::read_entry on NSmnData.NOS returns 23-byte entries") {
   CHECK(data.value.size() == entries[0].uncompressed_size);
 }
 
-TEST_CASE("NosArchive::read_entry on NSpnData.NOS returns 23-byte entries") {
+TEST_CASE("NosArchive::read_entry on NSpnData.NOS reads variable-length sprite entries") {
   // NSpnData.NOS — 1.2 MB, CCINF V1.20
   auto path = ensure_fixture("NostaleData\\NSpnData.NOS");
 

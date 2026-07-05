@@ -18,7 +18,7 @@ namespace onex::archive {
         return std::make_unique<ZlibArchiveFormat>();
       }
     }
-    if (std::equal(header.begin(), header.begin() + 11, "CCINF V1.20")) {
+    if (header.size() >= 11 && std::equal(header.begin(), header.begin() + 11, "CCINF V1.20")) {
       return std::make_unique<CcinfArchiveFormat>();
     }
     // Everything else is treated as TextArchive

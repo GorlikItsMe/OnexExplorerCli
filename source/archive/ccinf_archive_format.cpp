@@ -3,7 +3,6 @@
 
 #include <array>
 #include <optional>
-#include <sstream>
 
 namespace onex::archive {
 
@@ -27,13 +26,6 @@ namespace onex::archive {
       }
       return static_cast<uint16_t>(static_cast<unsigned char>(buf[0]))
              | static_cast<uint16_t>(static_cast<unsigned char>(buf[1])) << 8;
-    }
-
-    auto contains_name(const std::vector<EntryInfo>& entries, const std::string& name) -> bool {
-      for (const auto& e : entries) {
-        if (e.name == name) return true;
-      }
-      return false;
     }
 
   }  // namespace
@@ -67,18 +59,36 @@ namespace onex::archive {
     if (!creation_date || !file_size_raw || !file_size_dup) {
       return {{}, Error::kInvalidFormat};
     }
+    if (*file_size_raw != *file_size_dup) {
+      return {{}, Error::kInvalidFormat};
+    }
 
     char separator{};
     if (!stream.get(separator)) {
       return {{}, Error::kInvalidFormat};
     }
+    if (separator != 0x00) {
+      return {{}, Error::kInvalidFormat};
+    }
 
     auto file_count = read_u32_le(stream);
-    if (!file_count) {
+    if (!file_count || *file_count == 0) {
       return {{}, Error::kInvalidFormat};
     }
 
     std::vector<EntryInfo> entries;
+    // Sanity check: minimum entry size is 23 bytes (direction + animation +
+    // monster + base + nspm + kit + 7 texture count bytes with 0 sprites).
+    // Guard against absurd file_count that would cause reserve() OOM.
+    constexpr uint64_t kMinEntrySize = 23;
+    auto consumed = static_cast<uint64_t>(stream.tellg());
+    stream.seekg(0, std::ios::end);
+    auto stream_size = static_cast<uint64_t>(stream.tellg());
+    stream.seekg(static_cast<std::streamoff>(consumed));
+    auto remaining = stream_size - consumed;
+    if (remaining < static_cast<uint64_t>(*file_count) * kMinEntrySize) {
+      return {{}, Error::kInvalidFormat};
+    }
     entries.reserve(*file_count);
 
     for (uint32_t i = 0; i < *file_count; ++i) {
@@ -128,13 +138,6 @@ namespace onex::archive {
       auto entry_data_size = data_end - data_start;
 
       auto name = std::to_string(i);
-      if (contains_name(entries, name)) {
-        auto suffix = 2u;
-        while (contains_name(entries, name + "_" + std::to_string(suffix))) {
-          ++suffix;
-        }
-        name += "_" + std::to_string(suffix);
-      }
 
       entries.push_back({
           .id = i,
