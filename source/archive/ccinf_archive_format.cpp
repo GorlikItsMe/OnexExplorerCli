@@ -91,7 +91,8 @@ namespace onex::archive {
       // Parse entry header
       auto direction_byte = stream.get();
       auto animation_byte = stream.get();
-      if (direction_byte == std::char_traits<char>::eof() || animation_byte == std::char_traits<char>::eof()) {
+      if (direction_byte == std::char_traits<char>::eof()
+          || animation_byte == std::char_traits<char>::eof()) {
         return {{}, Error::kReadError};
       }
 
