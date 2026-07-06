@@ -79,14 +79,10 @@ namespace onex::archive {
     std::vector<EntryInfo> entries;
     // Sanity check: minimum entry size is 23 bytes (direction + animation +
     // monster + base + nspm + kit + 7 texture count bytes with 0 sprites).
+    // file_size_raw is the payload size from fileAmount through end of file.
     // Guard against absurd file_count that would cause reserve() OOM.
     constexpr uint64_t kMinEntrySize = 23;
-    auto consumed = static_cast<uint64_t>(stream.tellg());
-    stream.seekg(0, std::ios::end);
-    auto stream_size = static_cast<uint64_t>(stream.tellg());
-    stream.seekg(static_cast<std::streamoff>(consumed));
-    auto remaining = stream_size - consumed;
-    if (remaining < static_cast<uint64_t>(*file_count) * kMinEntrySize) {
+    if (*file_size_raw < static_cast<uint64_t>(*file_count) * kMinEntrySize) {
       return {{}, Error::kInvalidFormat};
     }
     entries.reserve(*file_count);
