@@ -21,6 +21,48 @@ TEST_CASE("NosArchive::open returns kFileNotFound for missing file") {
   CHECK(result.error == onex::Error::kFileNotFound);
 }
 
+TEST_CASE("NosArchive::open returns kInvalidFormat for non-NOS text file") {
+  auto temp_dir = std::filesystem::path(ONEX_PROJECT_SOURCE_DIR) / "temp" / "test_invalid";
+  std::filesystem::create_directories(temp_dir);
+  auto file_path = temp_dir / "not_a_nos.nos";
+
+  // Write content that looks like a markdown file (not any known NOS format)
+  {
+    std::ofstream ofs(file_path);
+    ofs << "[![Actions Status](https://github.com/GorlikItsMe/OnexExplorerCli/workflows/"
+           "Standalone/badge.svg)](https://github.com/GorlikItsMe/OnexExplorerCli/actions)\n"
+           "# OnexExplorerCli\n";
+  }
+
+  auto result = onex::archive::NosArchive::open(file_path.string());
+  CHECK_FALSE(result);
+  CHECK(result.error == onex::Error::kInvalidFormat);
+
+  std::filesystem::remove(file_path);
+  std::filesystem::remove(temp_dir);
+}
+
+TEST_CASE("NosArchive::open returns kInvalidFormat for random garbage file") {
+  auto temp_dir = std::filesystem::path(ONEX_PROJECT_SOURCE_DIR) / "temp" / "test_invalid";
+  std::filesystem::create_directories(temp_dir);
+  auto file_path = temp_dir / "garbage.nos";
+
+  // Write 256 bytes of binary garbage
+  {
+    std::ofstream ofs(file_path, std::ios::binary);
+    for (int i = 0; i < 256; ++i) {
+      ofs.put(static_cast<char>(i));
+    }
+  }
+
+  auto result = onex::archive::NosArchive::open(file_path.string());
+  CHECK_FALSE(result);
+  CHECK(result.error == onex::Error::kInvalidFormat);
+
+  std::filesystem::remove(file_path);
+  std::filesystem::remove(temp_dir);
+}
+
 TEST_CASE("NosArchive::open reads 16-byte header from a real NOS file") {
   // NSetcData.NOS — 1 KB, text archive
   auto path = ensure_fixture("NostaleData\\NSetcData.NOS");

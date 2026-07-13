@@ -39,6 +39,25 @@ namespace onex::archive {
       return {{}, Error::kInvalidFormat};
     }
 
+    // Sanity check: each entry needs at least 16 bytes (file_number 4B +
+    // name_length 4B + is_dat 4B + data_size 4B). If the claimed count
+    // couldn't possibly fit in the remaining stream, reject early instead of
+    // allocating an absurd amount of memory (prevents std::bad_alloc on
+    // non-NOS files that fall through to this format).
+    auto pos = stream.tellg();
+    if (pos != -1) {
+      stream.seekg(0, std::ios::end);
+      auto remaining = static_cast<uint64_t>(stream.tellg()) - static_cast<uint64_t>(pos);
+      stream.seekg(pos);
+      // Absolute minimum overhead: 16 bytes per entry (header fields only,
+      // zero-length name and data). If the count exceeds this, the file is
+      // clearly not a valid text-format archive.
+      constexpr uint32_t kMinEntryOverhead = 16;
+      if (*file_count > remaining / kMinEntryOverhead) {
+        return {{}, Error::kInvalidFormat};
+      }
+    }
+
     std::vector<EntryInfo> entries;
     entries.reserve(*file_count);
 
