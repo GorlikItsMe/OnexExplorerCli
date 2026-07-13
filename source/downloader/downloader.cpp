@@ -57,6 +57,7 @@ namespace onex::downloader {
     std::string game_id;
     std::string build_id;
     std::unique_ptr<HttpClient> http;
+    ProgressCallback progress_cb;
   };
 
   GameforgeDownloader::GameforgeDownloader(std::string game_id, std::string build_id,
@@ -101,7 +102,17 @@ namespace onex::downloader {
 
   auto GameforgeDownloader::download_file(const BuildInfoEntry& entry,
                                           const std::string& target_dir) -> Result<FileStatus> {
+    if (impl_->progress_cb) {
+      // Sequential download with live progress bar — use a dedicated client
+      auto client = std::make_unique<CurlHttpClient>();
+      client->set_progress_callback(impl_->progress_cb);
+      return download_file_with_client(entry, target_dir, *client);
+    }
     return download_file_with_client(entry, target_dir, *impl_->http);
+  }
+
+  void GameforgeDownloader::set_progress_callback(ProgressCallback cb) {
+    impl_->progress_cb = std::move(cb);
   }
 
   auto GameforgeDownloader::make_manifest_url() const -> std::string {

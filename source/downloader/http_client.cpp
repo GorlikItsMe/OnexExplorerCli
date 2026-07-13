@@ -41,6 +41,23 @@ namespace onex::downloader {
       curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
     }
 
+    auto write_progress(void* clientp, curl_off_t dltotal, curl_off_t dlnow,
+                        curl_off_t ultotal, curl_off_t ulnow) -> int {
+      auto* cb = static_cast<ProgressCallback*>(clientp);
+      if (cb && *cb) {
+        (*cb)(dltotal, dlnow, ultotal, ulnow);
+      }
+      return 0;
+    }
+
+    void apply_progress(CURL* curl, const ProgressCallback& cb) {
+      if (cb) {
+        curl_easy_setopt(curl, CURLOPT_NOPROGRESS, 0L);
+        curl_easy_setopt(curl, CURLOPT_XFERINFOFUNCTION, write_progress);
+        curl_easy_setopt(curl, CURLOPT_XFERINFODATA, &cb);
+      }
+    }
+
     // Thread-safe reference-counted global init/cleanup so multiple
     // CurlHttpClient instances can be created across threads.
     std::mutex g_curl_global_mutex;
@@ -64,6 +81,7 @@ namespace onex::downloader {
 
   struct CurlHttpClient::Impl {
     CURL* curl = nullptr;
+    ProgressCallback progress_cb;
   };
 
   CurlHttpClient::CurlHttpClient() : impl_(std::make_unique<Impl>()) {
@@ -78,6 +96,10 @@ namespace onex::downloader {
     curl_global_release();
   }
 
+  void CurlHttpClient::set_progress_callback(ProgressCallback cb) {
+    impl_->progress_cb = std::move(cb);
+  }
+
   auto CurlHttpClient::get(const std::string& url) -> HttpResponse {
     HttpResponse resp;
 
@@ -89,6 +111,7 @@ namespace onex::downloader {
     curl_easy_reset(impl_->curl);
     curl_slist* headers = nullptr;
     apply_common(impl_->curl, url, headers);
+    apply_progress(impl_->curl, impl_->progress_cb);
     curl_easy_setopt(impl_->curl, CURLOPT_WRITEFUNCTION, write_to_buffer);
     curl_easy_setopt(impl_->curl, CURLOPT_WRITEDATA, &resp.body);
 
@@ -121,6 +144,7 @@ namespace onex::downloader {
     curl_easy_reset(impl_->curl);
     curl_slist* headers = nullptr;
     apply_common(impl_->curl, url, headers);
+    apply_progress(impl_->curl, impl_->progress_cb);
     curl_easy_setopt(impl_->curl, CURLOPT_WRITEFUNCTION, write_to_file);
     curl_easy_setopt(impl_->curl, CURLOPT_WRITEDATA, &file);
 

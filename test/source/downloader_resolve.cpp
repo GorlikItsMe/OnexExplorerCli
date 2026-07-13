@@ -13,11 +13,13 @@ namespace {
   using onex::downloader::GameforgeDownloader;
   using onex::downloader::HttpClient;
   using onex::downloader::HttpResponse;
+  using onex::downloader::ProgressCallback;
 
   class FakeHttpClient : public HttpClient {
   public:
     auto get(const std::string&) -> HttpResponse override { return {}; }
     auto download(const std::string&, const std::string&) -> HttpResponse override { return {}; }
+    void set_progress_callback(ProgressCallback) override {}
   };
 
   auto makeEntry(std::string file, std::int64_t size = 100) -> BuildInfoEntry {

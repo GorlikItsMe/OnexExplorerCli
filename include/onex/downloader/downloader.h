@@ -40,6 +40,10 @@ namespace onex::downloader {
     auto download_file(const BuildInfoEntry& entry, const std::string& target_dir)
         -> Result<FileStatus>;
 
+    /// Set a progress callback for sequential downloads.
+    /// Called during curl transfers with (dltotal, dlnow, ultotal, ulnow).
+    void set_progress_callback(ProgressCallback cb);
+
     /// Download multiple files in parallel using up to max_concurrent threads.
     /// Returns one result per entry in the same order as the input vector.
     auto download_batch(const std::vector<BuildInfoEntry>& entries,
