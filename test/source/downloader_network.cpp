@@ -9,6 +9,7 @@
 namespace {
 
   using onex::downloader::BuildInfoEntry;
+  using onex::downloader::FileStatus;
   using onex::downloader::GameforgeDownloader;
 
   auto output_path_for(const std::string& target_dir, const BuildInfoEntry& entry)
@@ -47,7 +48,7 @@ TEST_CASE("download_file streams the smallest entry and size matches manifest") 
   // Download the file
   auto status = d.download_file(*pick, dir.string());
   REQUIRE(status);
-  CHECK(status.value == GameforgeDownloader::FileStatus::kDownloaded);
+  CHECK(status.value == FileStatus::kDownloaded);
 
   // Check that the file exists and has the correct size
   auto out = output_path_for(dir.string(), *pick);
@@ -62,7 +63,7 @@ TEST_CASE("download_file streams the smallest entry and size matches manifest") 
   // Download the file again (should be skipped)
   auto second = d.download_file(*pick, dir.string());
   REQUIRE(second);
-  CHECK(second.value == GameforgeDownloader::FileStatus::kSkipped);
+  CHECK(second.value == FileStatus::kSkipped);
 
   // Remove the temporary directory
   std::filesystem::remove_all(dir);

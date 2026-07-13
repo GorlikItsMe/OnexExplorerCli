@@ -4,6 +4,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <fstream>
+#include <mutex>
 #include <string>
 #include <vector>
 
@@ -37,6 +38,25 @@ namespace onex::downloader {
       curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
     }
 
+    // Thread-safe reference-counted global init/cleanup so multiple
+    // CurlHttpClient instances can be created across threads.
+    std::mutex g_curl_global_mutex;
+    int g_curl_refcount = 0;
+
+    void curl_global_acquire() {
+      std::lock_guard<std::mutex> lock(g_curl_global_mutex);
+      if (g_curl_refcount++ == 0) {
+        curl_global_init(CURL_GLOBAL_DEFAULT);
+      }
+    }
+
+    void curl_global_release() {
+      std::lock_guard<std::mutex> lock(g_curl_global_mutex);
+      if (--g_curl_refcount == 0) {
+        curl_global_cleanup();
+      }
+    }
+
   }  // anonymous namespace
 
   struct CurlHttpClient::Impl {
@@ -44,7 +64,7 @@ namespace onex::downloader {
   };
 
   CurlHttpClient::CurlHttpClient() : impl_(std::make_unique<Impl>()) {
-    curl_global_init(CURL_GLOBAL_DEFAULT);
+    curl_global_acquire();
     impl_->curl = curl_easy_init();
   }
 
@@ -52,7 +72,7 @@ namespace onex::downloader {
     if (impl_->curl) {
       curl_easy_cleanup(impl_->curl);
     }
-    curl_global_cleanup();
+    curl_global_release();
   }
 
   auto CurlHttpClient::get(const std::string& url) -> HttpResponse {

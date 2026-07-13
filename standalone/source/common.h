@@ -17,7 +17,7 @@ namespace onex::cli {
   auto entry_to_json(const onex::archive::EntryInfo& entry) -> nlohmann::json;
 
   auto run_download(const std::string& output_dir, const std::string& build_id,
-                    const std::vector<std::string>& archive_names, bool all) -> int;
+                    const std::vector<std::string>& archive_names, bool all, int jobs) -> int;
 
   auto run_extract(const std::string& filepath, const std::string& output_dir,
                    const std::vector<int>& entry_ids) -> int;

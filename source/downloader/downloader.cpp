@@ -2,8 +2,12 @@
 #include <onex/downloader/sha1.h>
 
 #include <algorithm>
+#include <atomic>
 #include <filesystem>
+#include <mutex>
+#include <queue>
 #include <string>
+#include <thread>
 #include <vector>
 
 namespace onex::downloader {
@@ -98,6 +102,34 @@ namespace onex::downloader {
 
   auto GameforgeDownloader::download_file(const BuildInfoEntry& entry,
                                           const std::string& target_dir) -> Result<FileStatus> {
+    return download_file_with_client(entry, target_dir, *impl_->http);
+  }
+
+  auto GameforgeDownloader::make_manifest_url() const -> std::string {
+    if (impl_->build_id == "latest") {
+      return "https://spark.gameforge.com/api/v1/patching/download/latest/" + impl_->game_id
+             + "/default";
+    }
+    return "https://spark.gameforge.com/api/v1/patching/download/install/" + impl_->game_id
+           + "/default/" + impl_->build_id;
+  }
+
+  auto GameforgeDownloader::make_download_url(const BuildInfoEntry& entry) const -> std::string {
+    return std::string{"http://patches.gameforge.com"} + entry.path;
+  }
+
+  auto GameforgeDownloader::verify_sha1(const std::string& path, const std::string& expected_hex)
+      -> bool {
+    if (expected_hex.empty()) {
+      return false;
+    }
+    auto actual = sha1_file_hex(path);
+    return actual == expected_hex;
+  }
+
+  auto GameforgeDownloader::download_file_with_client(const BuildInfoEntry& entry,
+                                                      const std::string& target_dir,
+                                                      HttpClient& http) -> Result<FileStatus> {
     if (entry.folder || entry.file.empty()) {
       return Result<FileStatus>{FileStatus::kSkipped, Error::kNone};
     }
@@ -114,8 +146,8 @@ namespace onex::downloader {
       return Result<FileStatus>{FileStatus::kSkipped, Error::kIoError};
     }
 
-    auto url = std::string{"http://patches.gameforge.com"} + entry.path;
-    auto resp = impl_->http->download(url, output_path.string());
+    auto url = make_download_url(entry);
+    auto resp = http.download(url, output_path.string());
     if (resp.status_code != 200) {
       return Result<FileStatus>{FileStatus::kSkipped, Error::kNetworkError};
     }
@@ -123,22 +155,57 @@ namespace onex::downloader {
     return Result<FileStatus>{FileStatus::kDownloaded, Error::kNone};
   }
 
-  auto GameforgeDownloader::make_manifest_url() const -> std::string {
-    if (impl_->build_id == "latest") {
-      return "https://spark.gameforge.com/api/v1/patching/download/latest/" + impl_->game_id
-             + "/default";
-    }
-    return "https://spark.gameforge.com/api/v1/patching/download/install/" + impl_->game_id
-           + "/default/" + impl_->build_id;
-  }
+  auto GameforgeDownloader::download_batch(const std::vector<BuildInfoEntry>& entries,
+                                           const std::string& target_dir, int max_concurrent)
+      -> std::vector<BatchResult> {
+    std::vector<BatchResult> results;
+    results.reserve(entries.size());
 
-  auto GameforgeDownloader::verify_sha1(const std::string& path, const std::string& expected_hex)
-      -> bool {
-    if (expected_hex.empty()) {
-      return false;
+    std::queue<std::size_t> pending;
+    for (std::size_t i = 0; i < entries.size(); ++i) {
+      results.push_back({entries[i], Result<FileStatus>{FileStatus::kSkipped, Error::kNone}});
+      if (!entries[i].folder && !entries[i].file.empty()) {
+        pending.push(i);
+      }
     }
-    auto actual = sha1_file_hex(path);
-    return actual == expected_hex;
+
+    if (pending.empty()) {
+      return results;
+    }
+
+    const int n = std::min(max_concurrent, static_cast<int>(pending.size()));
+
+    std::mutex queue_mtx;
+
+    auto worker = [&]() {
+      CurlHttpClient http{};
+
+      for (;;) {
+        std::size_t idx;
+        {
+          std::lock_guard<std::mutex> lock(queue_mtx);
+          if (pending.empty()) {
+            break;
+          }
+          idx = pending.front();
+          pending.pop();
+        }
+
+        auto status = download_file_with_client(entries[idx], target_dir, http);
+        results[idx].status = status;
+      }
+    };
+
+    std::vector<std::thread> threads;
+    threads.reserve(n);
+    for (int i = 0; i < n; ++i) {
+      threads.emplace_back(worker);
+    }
+    for (auto& t : threads) {
+      t.join();
+    }
+
+    return results;
   }
 
 }  // namespace onex::downloader
