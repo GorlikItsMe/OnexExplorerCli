@@ -34,7 +34,8 @@ namespace onex::downloader {
       curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1L);
       curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 0L);
       curl_easy_setopt(curl, CURLOPT_CONNECTTIMEOUT, 30L);
-      curl_easy_setopt(curl, CURLOPT_TIMEOUT, 300L);
+      curl_easy_setopt(curl, CURLOPT_LOW_SPEED_LIMIT, 1L);
+      curl_easy_setopt(curl, CURLOPT_LOW_SPEED_TIME, 60L);
       curl_easy_setopt(curl, CURLOPT_USERAGENT, "GameforgeClient/2.8.5");
       headers = curl_slist_append(headers, "Origin: spark://www.gameforge.com");
       curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
