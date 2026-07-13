@@ -52,15 +52,16 @@ namespace onex::cli {
 
       int had_error = 0;
       for (auto& result : results) {
+        auto& entry = resolved[result.index];
         if (result.status) {
           if (result.status.value == FileStatus::kDownloaded) {
-            std::cout << "Downloaded " << result.entry.file << " (" << result.entry.size
+            std::cout << "Downloaded " << entry.file << " (" << entry.size
                       << " bytes)\n";
           } else {
-            std::cout << "Skipped " << result.entry.file << " (already up to date)\n";
+            std::cout << "Skipped " << entry.file << " (already up to date)\n";
           }
         } else {
-          std::cerr << "OnexExplorerCli: error: " << result.entry.file << ": "
+          std::cerr << "OnexExplorerCli: error: " << entry.file << ": "
                     << error_text(result.status.error) << "\n";
           had_error = 1;
         }

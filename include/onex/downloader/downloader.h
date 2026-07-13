@@ -4,6 +4,7 @@
 #include <onex/downloader/build_info.h>
 #include <onex/downloader/http_client.h>
 
+#include <cstddef>
 #include <memory>
 #include <string>
 #include <vector>
@@ -16,12 +17,15 @@ namespace onex::downloader {
   };
 
   struct BatchResult {
-    BuildInfoEntry entry;
+    std::size_t index;
     Result<FileStatus> status;
   };
 
   class GameforgeDownloader {
   public:
+    /// Backward compatibility alias for the moved FileStatus enum.
+    using FileStatus = onex::downloader::FileStatus;
+
     explicit GameforgeDownloader(std::string game_id, std::string build_id,
                                  std::unique_ptr<HttpClient> http
                                  = std::make_unique<CurlHttpClient>());

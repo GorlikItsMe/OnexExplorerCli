@@ -2,7 +2,6 @@
 #include <onex/downloader/sha1.h>
 
 #include <algorithm>
-#include <atomic>
 #include <filesystem>
 #include <mutex>
 #include <queue>
@@ -158,12 +157,16 @@ namespace onex::downloader {
   auto GameforgeDownloader::download_batch(const std::vector<BuildInfoEntry>& entries,
                                            const std::string& target_dir, int max_concurrent)
       -> std::vector<BatchResult> {
+    if (max_concurrent < 1) {
+      max_concurrent = 1;
+    }
+
     std::vector<BatchResult> results;
     results.reserve(entries.size());
 
     std::queue<std::size_t> pending;
     for (std::size_t i = 0; i < entries.size(); ++i) {
-      results.push_back({entries[i], Result<FileStatus>{FileStatus::kSkipped, Error::kNone}});
+      results.push_back({i, Result<FileStatus>{FileStatus::kSkipped, Error::kNone}});
       if (!entries[i].folder && !entries[i].file.empty()) {
         pending.push(i);
       }
