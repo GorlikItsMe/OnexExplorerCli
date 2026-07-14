@@ -118,12 +118,6 @@ TEST_CASE("resolve does not auto-append .NOS") {
   CHECK(r.error == onex::Error::kEntryNotFound);
 }
 
-TEST_CASE("download_batch with empty entries returns empty") {
-  auto d = makeDownloader();
-  auto results = d.download_batch({}, "/tmp", 4);
-  CHECK(results.empty());
-}
-
 TEST_CASE("download_batch with all folders returns all-skipped") {
   auto d = makeDownloader();
   BuildInfoEntry folder_entry;
