@@ -4,6 +4,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <fstream>
+#include <mutex>
 #include <string>
 #include <vector>
 
@@ -32,19 +33,59 @@ namespace onex::downloader {
       curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
       curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1L);
       curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 0L);
+      curl_easy_setopt(curl, CURLOPT_CONNECTTIMEOUT, 30L);
+      curl_easy_setopt(curl, CURLOPT_LOW_SPEED_LIMIT, 1024L);
+      curl_easy_setopt(curl, CURLOPT_LOW_SPEED_TIME, 30L);
       curl_easy_setopt(curl, CURLOPT_USERAGENT, "GameforgeClient/2.8.5");
       headers = curl_slist_append(headers, "Origin: spark://www.gameforge.com");
       curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
+    }
+
+    auto write_progress(void* clientp, curl_off_t dltotal, curl_off_t dlnow, curl_off_t ultotal,
+                        curl_off_t ulnow) -> int {
+      auto* cb = static_cast<ProgressCallback*>(clientp);
+      if (cb && *cb) {
+        (*cb)(dltotal, dlnow, ultotal, ulnow);
+      }
+      return 0;
+    }
+
+    void apply_progress(CURL* curl, const ProgressCallback& cb) {
+      if (cb) {
+        curl_easy_setopt(curl, CURLOPT_NOPROGRESS, 0L);
+        curl_easy_setopt(curl, CURLOPT_XFERINFOFUNCTION, write_progress);
+        curl_easy_setopt(curl, CURLOPT_XFERINFODATA, &cb);
+      }
+    }
+
+    // Thread-safe reference-counted global init/cleanup so multiple
+    // CurlHttpClient instances can be created across threads.
+    std::mutex g_curl_global_mutex;
+    int g_curl_refcount = 0;
+
+    void curl_global_acquire() {
+      std::lock_guard<std::mutex> lock(g_curl_global_mutex);
+      if (g_curl_refcount++ == 0) {
+        curl_global_init(CURL_GLOBAL_DEFAULT);
+      }
+    }
+
+    void curl_global_release() {
+      std::lock_guard<std::mutex> lock(g_curl_global_mutex);
+      if (--g_curl_refcount == 0) {
+        curl_global_cleanup();
+      }
     }
 
   }  // anonymous namespace
 
   struct CurlHttpClient::Impl {
     CURL* curl = nullptr;
+    ProgressCallback progress_cb;
   };
 
   CurlHttpClient::CurlHttpClient() : impl_(std::make_unique<Impl>()) {
-    curl_global_init(CURL_GLOBAL_DEFAULT);
+    curl_global_acquire();
     impl_->curl = curl_easy_init();
   }
 
@@ -52,7 +93,11 @@ namespace onex::downloader {
     if (impl_->curl) {
       curl_easy_cleanup(impl_->curl);
     }
-    curl_global_cleanup();
+    curl_global_release();
+  }
+
+  void CurlHttpClient::set_progress_callback(ProgressCallback cb) {
+    impl_->progress_cb = std::move(cb);
   }
 
   auto CurlHttpClient::get(const std::string& url) -> HttpResponse {
@@ -66,6 +111,7 @@ namespace onex::downloader {
     curl_easy_reset(impl_->curl);
     curl_slist* headers = nullptr;
     apply_common(impl_->curl, url, headers);
+    apply_progress(impl_->curl, impl_->progress_cb);
     curl_easy_setopt(impl_->curl, CURLOPT_WRITEFUNCTION, write_to_buffer);
     curl_easy_setopt(impl_->curl, CURLOPT_WRITEDATA, &resp.body);
 
@@ -98,6 +144,7 @@ namespace onex::downloader {
     curl_easy_reset(impl_->curl);
     curl_slist* headers = nullptr;
     apply_common(impl_->curl, url, headers);
+    apply_progress(impl_->curl, impl_->progress_cb);
     curl_easy_setopt(impl_->curl, CURLOPT_WRITEFUNCTION, write_to_file);
     curl_easy_setopt(impl_->curl, CURLOPT_WRITEDATA, &file);
 

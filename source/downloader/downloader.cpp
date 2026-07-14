@@ -3,7 +3,10 @@
 
 #include <algorithm>
 #include <filesystem>
+#include <mutex>
+#include <queue>
 #include <string>
+#include <thread>
 #include <vector>
 
 namespace onex::downloader {
@@ -54,6 +57,8 @@ namespace onex::downloader {
     std::string game_id;
     std::string build_id;
     std::unique_ptr<HttpClient> http;
+    ProgressCallback progress_cb;
+    HttpClientFactory client_factory = [] { return std::make_unique<CurlHttpClient>(); };
   };
 
   GameforgeDownloader::GameforgeDownloader(std::string game_id, std::string build_id,
@@ -98,6 +103,48 @@ namespace onex::downloader {
 
   auto GameforgeDownloader::download_file(const BuildInfoEntry& entry,
                                           const std::string& target_dir) -> Result<FileStatus> {
+    if (impl_->progress_cb) {
+      // Sequential download with live progress bar — use a dedicated client
+      auto client = std::make_unique<CurlHttpClient>();
+      client->set_progress_callback(impl_->progress_cb);
+      return download_file_with_client(entry, target_dir, *client);
+    }
+    return download_file_with_client(entry, target_dir, *impl_->http);
+  }
+
+  void GameforgeDownloader::set_progress_callback(ProgressCallback cb) {
+    impl_->progress_cb = std::move(cb);
+  }
+
+  void GameforgeDownloader::set_client_factory(HttpClientFactory factory) {
+    impl_->client_factory = std::move(factory);
+  }
+
+  auto GameforgeDownloader::make_manifest_url() const -> std::string {
+    if (impl_->build_id == "latest") {
+      return "https://spark.gameforge.com/api/v1/patching/download/latest/" + impl_->game_id
+             + "/default";
+    }
+    return "https://spark.gameforge.com/api/v1/patching/download/install/" + impl_->game_id
+           + "/default/" + impl_->build_id;
+  }
+
+  auto GameforgeDownloader::make_download_url(const BuildInfoEntry& entry) const -> std::string {
+    return std::string{"http://patches.gameforge.com"} + entry.path;
+  }
+
+  auto GameforgeDownloader::verify_sha1(const std::string& path, const std::string& expected_hex)
+      -> bool {
+    if (expected_hex.empty()) {
+      return false;
+    }
+    auto actual = sha1_file_hex(path);
+    return actual == expected_hex;
+  }
+
+  auto GameforgeDownloader::download_file_with_client(const BuildInfoEntry& entry,
+                                                      const std::string& target_dir,
+                                                      HttpClient& http) -> Result<FileStatus> {
     if (entry.folder || entry.file.empty()) {
       return Result<FileStatus>{FileStatus::kSkipped, Error::kNone};
     }
@@ -114,31 +161,84 @@ namespace onex::downloader {
       return Result<FileStatus>{FileStatus::kSkipped, Error::kIoError};
     }
 
-    auto url = std::string{"http://patches.gameforge.com"} + entry.path;
-    auto resp = impl_->http->download(url, output_path.string());
+    auto url = make_download_url(entry);
+    auto resp = http.download(url, output_path.string());
     if (resp.status_code != 200) {
+      std::error_code ignore_ec;
+      fs::remove(output_path, ignore_ec);  // clean up partial file
       return Result<FileStatus>{FileStatus::kSkipped, Error::kNetworkError};
     }
 
     return Result<FileStatus>{FileStatus::kDownloaded, Error::kNone};
   }
 
-  auto GameforgeDownloader::make_manifest_url() const -> std::string {
-    if (impl_->build_id == "latest") {
-      return "https://spark.gameforge.com/api/v1/patching/download/latest/" + impl_->game_id
-             + "/default";
+  auto GameforgeDownloader::download_batch(const std::vector<BuildInfoEntry>& entries,
+                                           const std::string& target_dir, int max_concurrent)
+      -> std::vector<BatchResult> {
+    if (max_concurrent < 1) {
+      max_concurrent = 1;
     }
-    return "https://spark.gameforge.com/api/v1/patching/download/install/" + impl_->game_id
-           + "/default/" + impl_->build_id;
-  }
 
-  auto GameforgeDownloader::verify_sha1(const std::string& path, const std::string& expected_hex)
-      -> bool {
-    if (expected_hex.empty()) {
-      return false;
+    std::vector<BatchResult> results;
+    results.reserve(entries.size());
+
+    std::queue<std::size_t> pending;
+    for (std::size_t i = 0; i < entries.size(); ++i) {
+      results.push_back({i, Result<FileStatus>{FileStatus::kSkipped, Error::kNone}});
+      if (!entries[i].folder && !entries[i].file.empty()) {
+        pending.push(i);
+      }
     }
-    auto actual = sha1_file_hex(path);
-    return actual == expected_hex;
+
+    if (pending.empty()) {
+      return results;
+    }
+
+    const int n = std::min(max_concurrent, static_cast<int>(pending.size()));
+
+    std::mutex queue_mtx;
+
+    std::vector<std::thread> threads;
+    threads.reserve(n);
+
+    // RAII guard — joins any remaining threads on scope exit (e.g. exception during creation)
+    auto guard = [](std::vector<std::thread>& t) {
+      struct Joiner {
+        std::vector<std::thread>& t;
+        ~Joiner() {
+          for (auto& th : t) {
+            if (th.joinable()) th.join();
+          }
+        }
+      };
+      return Joiner{t};
+    }(threads);
+
+    auto worker = [&, factory = impl_->client_factory]() {
+      auto http = factory();
+
+      for (;;) {
+        std::size_t idx;
+        {
+          std::lock_guard<std::mutex> lock(queue_mtx);
+          if (pending.empty()) {
+            break;
+          }
+          idx = pending.front();
+          pending.pop();
+        }
+
+        auto status = download_file_with_client(entries[idx], target_dir, *http);
+        results[idx].status = status;
+      }
+    };
+
+    for (int i = 0; i < n; ++i) {
+      threads.emplace_back(worker);
+    }
+    // guard destructor joins threads when leaving scope
+
+    return results;
   }
 
 }  // namespace onex::downloader

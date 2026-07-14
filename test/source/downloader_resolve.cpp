@@ -13,11 +13,13 @@ namespace {
   using onex::downloader::GameforgeDownloader;
   using onex::downloader::HttpClient;
   using onex::downloader::HttpResponse;
+  using onex::downloader::ProgressCallback;
 
   class FakeHttpClient : public HttpClient {
   public:
     auto get(const std::string&) -> HttpResponse override { return {}; }
     auto download(const std::string&, const std::string&) -> HttpResponse override { return {}; }
+    void set_progress_callback(ProgressCallback) override {}
   };
 
   auto makeEntry(std::string file, std::int64_t size = 100) -> BuildInfoEntry {
@@ -114,4 +116,18 @@ TEST_CASE("resolve does not auto-append .NOS") {
   auto r = d.resolve(entries, "NSipData");
   CHECK_FALSE(r);
   CHECK(r.error == onex::Error::kEntryNotFound);
+}
+
+TEST_CASE("download_batch with all folders returns all-skipped") {
+  auto d = makeDownloader();
+  BuildInfoEntry folder_entry;
+  folder_entry.folder = true;
+  folder_entry.file = "NostaleData\\SubFolder";
+
+  auto results = d.download_batch({folder_entry, folder_entry}, "/tmp", 2);
+  CHECK(results.size() == 2);
+  CHECK(results[0].index == 0);
+  CHECK(results[1].index == 1);
+  CHECK(results[0].status);
+  CHECK(results[0].status.value == onex::downloader::FileStatus::kSkipped);
 }
