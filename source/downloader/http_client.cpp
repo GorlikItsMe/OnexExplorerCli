@@ -41,8 +41,8 @@ namespace onex::downloader {
       curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
     }
 
-    auto write_progress(void* clientp, curl_off_t dltotal, curl_off_t dlnow,
-                        curl_off_t ultotal, curl_off_t ulnow) -> int {
+    auto write_progress(void* clientp, curl_off_t dltotal, curl_off_t dlnow, curl_off_t ultotal,
+                        curl_off_t ulnow) -> int {
       auto* cb = static_cast<ProgressCallback*>(clientp);
       if (cb && *cb) {
         (*cb)(dltotal, dlnow, ultotal, ulnow);

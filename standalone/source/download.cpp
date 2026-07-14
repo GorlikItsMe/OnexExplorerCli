@@ -1,10 +1,11 @@
+#include <unistd.h>
+
 #include <chrono>
 #include <cstdio>
 #include <iomanip>
 #include <iostream>
 #include <memory>
 #include <string>
-#include <unistd.h>
 
 #include "common.h"
 
@@ -31,8 +32,8 @@ namespace onex::cli {
       if (filled < bar_width) bar += '>';
       bar.append(bar_width - bar.size(), ' ');
 
-      std::cout << '\r' << name << "  [" << bar << "]  " << pct << "%  "
-                << std::fixed << std::setprecision(1) << speed_mb << " MB/s";
+      std::cout << '\r' << name << "  [" << bar << "]  " << pct << "%  " << std::fixed
+                << std::setprecision(1) << speed_mb << " MB/s";
 
       if (eta.count() > 0) {
         auto mins = std::chrono::duration_cast<std::chrono::minutes>(eta);
@@ -100,8 +101,7 @@ namespace onex::cli {
         auto& entry = resolved[result.index];
         if (result.status) {
           if (result.status.value == FileStatus::kDownloaded) {
-            std::cout << "Downloaded " << entry.file << " (" << entry.size
-                      << " bytes)\n";
+            std::cout << "Downloaded " << entry.file << " (" << entry.size << " bytes)\n";
           } else {
             std::cout << "Skipped " << entry.file << " (already up to date)\n";
           }
@@ -129,8 +129,8 @@ namespace onex::cli {
         auto last_tp = std::make_shared<clock::time_point>(clock::now());
 
         ProgressCallback cb = [&entry, short_name_str, last_dl, last_tp](
-                                  std::int64_t dltotal, std::int64_t dlnow,
-                                  std::int64_t, std::int64_t) {
+                                  std::int64_t dltotal, std::int64_t dlnow, std::int64_t,
+                                  std::int64_t) {
           if (dltotal <= 0) return;
 
           auto now = clock::now();
@@ -148,8 +148,7 @@ namespace onex::cli {
 
           if (dltotal > 0 && dlnow > 0) {
             auto remaining_s = static_cast<int>((dltotal - dlnow) / (dlnow / elapsed));
-            draw_progress_bar(short_name_str, pct, speed_mb,
-                              std::chrono::seconds{remaining_s});
+            draw_progress_bar(short_name_str, pct, speed_mb, std::chrono::seconds{remaining_s});
           }
         };
 
@@ -164,8 +163,8 @@ namespace onex::cli {
       }
 
       if (!status) {
-        std::cerr << "OnexExplorerCli: error: " << entry.file << ": "
-                  << error_text(status.error) << "\n";
+        std::cerr << "OnexExplorerCli: error: " << entry.file << ": " << error_text(status.error)
+                  << "\n";
         had_error = true;
         continue;
       }

@@ -50,17 +50,15 @@ namespace onex::downloader {
 
     /// Download multiple files in parallel using up to max_concurrent threads.
     /// Returns one result per entry in the same order as the input vector.
-    auto download_batch(const std::vector<BuildInfoEntry>& entries,
-                        const std::string& target_dir, int max_concurrent)
-        -> std::vector<BatchResult>;
+    auto download_batch(const std::vector<BuildInfoEntry>& entries, const std::string& target_dir,
+                        int max_concurrent) -> std::vector<BatchResult>;
 
   private:
     auto make_manifest_url() const -> std::string;
     auto make_download_url(const BuildInfoEntry& entry) const -> std::string;
     auto verify_sha1(const std::string& path, const std::string& expected_hex) -> bool;
-    auto download_file_with_client(const BuildInfoEntry& entry,
-                                   const std::string& target_dir, HttpClient& http)
-        -> Result<FileStatus>;
+    auto download_file_with_client(const BuildInfoEntry& entry, const std::string& target_dir,
+                                   HttpClient& http) -> Result<FileStatus>;
 
     struct Impl;
     std::unique_ptr<Impl> impl_;

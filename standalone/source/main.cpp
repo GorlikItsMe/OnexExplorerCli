@@ -27,7 +27,8 @@ auto main(int argc, char** argv) -> int {
       ->capture_default_str();
   download->add_flag("--all", all, "Download all archives from the manifest");
   download->add_option("-j,--jobs", jobs, "Number of download threads (4 = default, max 8)")
-      ->capture_default_str()->check(CLI::Range(1, 8));
+      ->capture_default_str()
+      ->check(CLI::Range(1, 8));
   download->add_option("archive-names", archive_names, "Archive names from the Gameforge manifest")
       ->expected(-1);
 

@@ -11,8 +11,8 @@
 namespace onex::downloader {
 
   /// Signature: (dltotal, dlnow, ultotal, ulnow) — called during transfer.
-  using ProgressCallback = std::function<void(int64_t dltotal, int64_t dlnow,
-                                              int64_t ultotal, int64_t ulnow)>;
+  using ProgressCallback
+      = std::function<void(int64_t dltotal, int64_t dlnow, int64_t ultotal, int64_t ulnow)>;
 
   class HttpClient;
 
