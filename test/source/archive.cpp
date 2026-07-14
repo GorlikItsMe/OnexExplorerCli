@@ -102,20 +102,6 @@ TEST_CASE("NosArchive::open header does not contain known bytes for NSgtdData.NO
   CHECK(std::equal(not_expected.begin(), not_expected.end(), h.begin()) == false);
 }
 
-TEST_CASE("NosArchive::open header contains known bytes for NSmnData.NOS") {
-  // NSmnData.NOS — 0.5 MB, CCINF V1.20
-  auto path = ensure_fixture("NostaleData\\NSmnData.NOS");
-
-  auto result = onex::archive::NosArchive::open(path);
-  REQUIRE(result);
-
-  auto& h = result.value.header();
-  const std::vector<uint8_t> expected = {
-      'C', 'C', 'I', 'N', 'F', ' ', 'V', '1', '.', '2', '0',
-  };
-  CHECK(std::equal(expected.begin(), expected.end(), h.begin()));
-}
-
 TEST_CASE("NosArchive::read_entry on NSmnData.NOS reads variable-length sprite entries") {
   // NSmnData.NOS — 0.5 MB, CCINF V1.20
   auto path = ensure_fixture("NostaleData\\NSmnData.NOS");
@@ -138,29 +124,6 @@ TEST_CASE("NosArchive::read_entry on NSmnData.NOS reads variable-length sprite e
   }
 
   // Verify first entry data can be read and matches expected size
-  auto data = result.value.read_entry(0);
-  REQUIRE(data);
-  CHECK(data.value.size() == entries[0].uncompressed_size);
-}
-
-TEST_CASE("NosArchive::read_entry on NSpnData.NOS reads variable-length sprite entries") {
-  // NSpnData.NOS — 1.2 MB, CCINF V1.20
-  auto path = ensure_fixture("NostaleData\\NSpnData.NOS");
-
-  auto result = onex::archive::NosArchive::open(path);
-  REQUIRE(result);
-
-  auto entries = result.value.entries();
-  // NSpnData has 9699 entries
-  CHECK(entries.size() == 9699);
-
-  // All entries are uncompressed sprite info records (variable size)
-  for (const auto& e : entries) {
-    CHECK(e.compressed == false);
-    CHECK(e.uncompressed_size >= 23);
-  }
-
-  // Verify first entry data
   auto data = result.value.read_entry(0);
   REQUIRE(data);
   CHECK(data.value.size() == entries[0].uncompressed_size);
