@@ -117,3 +117,23 @@ TEST_CASE("resolve does not auto-append .NOS") {
   CHECK_FALSE(r);
   CHECK(r.error == onex::Error::kEntryNotFound);
 }
+
+TEST_CASE("download_batch with empty entries returns empty") {
+  auto d = makeDownloader();
+  auto results = d.download_batch({}, "/tmp", 4);
+  CHECK(results.empty());
+}
+
+TEST_CASE("download_batch with all folders returns all-skipped") {
+  auto d = makeDownloader();
+  BuildInfoEntry folder_entry;
+  folder_entry.folder = true;
+  folder_entry.file = "NostaleData\\SubFolder";
+
+  auto results = d.download_batch({folder_entry, folder_entry}, "/tmp", 2);
+  CHECK(results.size() == 2);
+  CHECK(results[0].index == 0);
+  CHECK(results[1].index == 1);
+  CHECK(results[0].status);
+  CHECK(results[0].status.value == onex::downloader::FileStatus::kSkipped);
+}

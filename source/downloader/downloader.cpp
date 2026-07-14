@@ -159,6 +159,8 @@ namespace onex::downloader {
     auto url = make_download_url(entry);
     auto resp = http.download(url, output_path.string());
     if (resp.status_code != 200) {
+      std::error_code ignore_ec;
+      fs::remove(output_path, ignore_ec);  // clean up partial file
       return Result<FileStatus>{FileStatus::kSkipped, Error::kNetworkError};
     }
 

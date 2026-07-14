@@ -17,7 +17,7 @@ auto main(int argc, char** argv) -> int {
   std::string output_dir;
   std::string build_id = "latest";
   bool all = false;
-  int jobs = 1;
+  int jobs = 4;
   std::vector<std::string> archive_names;
 
   auto* download = app.add_subcommand("download", "Fetch .NOS archives from the Gameforge CDN");
@@ -26,7 +26,7 @@ auto main(int argc, char** argv) -> int {
   download->add_option("--build-id", build_id, "Build version (default: latest)")
       ->capture_default_str();
   download->add_flag("--all", all, "Download all archives from the manifest");
-  download->add_option("-j,--jobs", jobs, "Number of download threads (1 = sequential, max 8)")
+  download->add_option("-j,--jobs", jobs, "Number of download threads (4 = default, max 8)")
       ->capture_default_str()->check(CLI::Range(1, 8));
   download->add_option("archive-names", archive_names, "Archive names from the Gameforge manifest")
       ->expected(-1);

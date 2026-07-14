@@ -1,8 +1,10 @@
 #include <chrono>
+#include <cstdio>
 #include <iomanip>
 #include <iostream>
 #include <memory>
 #include <string>
+#include <unistd.h>
 
 #include "common.h"
 
@@ -114,47 +116,52 @@ namespace onex::cli {
 
     // Sequential download with live progress bar
     auto had_error = false;
+    auto is_tty = isatty(fileno(stdout));
     for (const auto& entry : resolved) {
       auto short_name_str = short_name(entry.file);
 
-      // Set up a one-shot progress callback for this file
-      using onex::downloader::ProgressCallback;
-      using clock = std::chrono::steady_clock;
+      if (is_tty) {
+        // Set up a one-shot progress callback for this file
+        using onex::downloader::ProgressCallback;
+        using clock = std::chrono::steady_clock;
 
-      auto last_dl = std::make_shared<std::int64_t>(0);
-      auto last_tp = std::make_shared<clock::time_point>(clock::now());
+        auto last_dl = std::make_shared<std::int64_t>(0);
+        auto last_tp = std::make_shared<clock::time_point>(clock::now());
 
-      ProgressCallback cb = [&entry, short_name_str, last_dl, last_tp](
-                                std::int64_t dltotal, std::int64_t dlnow,
-                                std::int64_t, std::int64_t) {
-        if (dltotal <= 0) return;
+        ProgressCallback cb = [&entry, short_name_str, last_dl, last_tp](
+                                  std::int64_t dltotal, std::int64_t dlnow,
+                                  std::int64_t, std::int64_t) {
+          if (dltotal <= 0) return;
 
-        auto now = clock::now();
-        auto elapsed = std::chrono::duration<double>(now - *last_tp).count();
-        auto pct = static_cast<int>(dlnow * 100 / dltotal);
+          auto now = clock::now();
+          auto elapsed = std::chrono::duration<double>(now - *last_tp).count();
+          auto pct = static_cast<int>(dlnow * 100 / dltotal);
 
-        // Compute instantaneous speed over the last ~0.5s
-        double speed_mb = 0.0;
-        auto dl_delta = dlnow - *last_dl;
-        if (elapsed > 0.3 && dl_delta > 0) {
-          speed_mb = dl_delta / elapsed / (1024.0 * 1024.0);
-          *last_dl = dlnow;
-          *last_tp = now;
-        }
+          // Compute instantaneous speed over the last ~0.5s
+          double speed_mb = 0.0;
+          auto dl_delta = dlnow - *last_dl;
+          if (elapsed > 0.3 && dl_delta > 0) {
+            speed_mb = dl_delta / elapsed / (1024.0 * 1024.0);
+            *last_dl = dlnow;
+            *last_tp = now;
+          }
 
-        if (dltotal > 0 && dlnow > 0) {
-          auto remaining_s = static_cast<int>((dltotal - dlnow) / (dlnow / elapsed));
-          draw_progress_bar(short_name_str, pct, speed_mb,
-                            std::chrono::seconds{remaining_s});
-        }
-      };
+          if (dltotal > 0 && dlnow > 0) {
+            auto remaining_s = static_cast<int>((dltotal - dlnow) / (dlnow / elapsed));
+            draw_progress_bar(short_name_str, pct, speed_mb,
+                              std::chrono::seconds{remaining_s});
+          }
+        };
 
-      downloader.set_progress_callback(std::move(cb));
+        downloader.set_progress_callback(std::move(cb));
+      }
 
       auto status = downloader.download_file(entry, output_dir);
 
-      // Clear the progress bar line
-      std::cout << '\r' << std::string(60, ' ') << '\r' << std::flush;
+      // Clear the progress bar line (only if we drew one)
+      if (is_tty) {
+        std::cout << '\r' << std::string(60, ' ') << '\r' << std::flush;
+      }
 
       if (!status) {
         std::cerr << "OnexExplorerCli: error: " << entry.file << ": "
