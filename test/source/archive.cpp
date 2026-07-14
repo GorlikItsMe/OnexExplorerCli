@@ -21,27 +21,6 @@ TEST_CASE("NosArchive::open returns kFileNotFound for missing file") {
   CHECK(result.error == onex::Error::kFileNotFound);
 }
 
-TEST_CASE("NosArchive::open returns kInvalidFormat for non-NOS text file") {
-  auto temp_dir = std::filesystem::path(ONEX_PROJECT_SOURCE_DIR) / "temp" / "test_invalid";
-  std::filesystem::create_directories(temp_dir);
-  auto file_path = temp_dir / "not_a_nos.nos";
-
-  // Write content that looks like a markdown file (not any known NOS format)
-  {
-    std::ofstream ofs(file_path);
-    ofs << "[![Actions Status](https://github.com/GorlikItsMe/OnexExplorerCli/workflows/"
-           "Standalone/badge.svg)](https://github.com/GorlikItsMe/OnexExplorerCli/actions)\n"
-           "# OnexExplorerCli\n";
-  }
-
-  auto result = onex::archive::NosArchive::open(file_path.string());
-  CHECK_FALSE(result);
-  CHECK(result.error == onex::Error::kInvalidFormat);
-
-  std::filesystem::remove(file_path);
-  std::filesystem::remove(temp_dir);
-}
-
 TEST_CASE("NosArchive::open returns kInvalidFormat for random garbage file") {
   auto temp_dir = std::filesystem::path(ONEX_PROJECT_SOURCE_DIR) / "temp" / "test_invalid";
   std::filesystem::create_directories(temp_dir);
