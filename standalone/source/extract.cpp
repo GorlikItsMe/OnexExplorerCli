@@ -59,7 +59,15 @@ namespace onex::cli {
       }
 
       auto out_path = std::filesystem::path(output_dir) / out_name;
-      std::filesystem::create_directories(out_path.parent_path());
+      std::error_code ec;
+      if (!std::filesystem::is_directory(out_path.parent_path(), ec)) {
+        if (!std::filesystem::create_directories(out_path.parent_path(), ec) && ec) {
+          std::cerr << "OnexExplorerCli: error: cannot create output directory \""
+                    << out_path.parent_path() << "\"\\n";
+          had_error = true;
+          return;
+        }
+      }
 
       std::ofstream out{out_path, std::ios::binary};
       if (!out) {
