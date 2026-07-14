@@ -42,6 +42,7 @@ namespace onex::archive {
     //   0x19 - 0x1C: fileAmount (uint32 LE) - number of entries
     //   Then entry records follow sequentially
 
+    stream.clear();
     stream.seekg(0);
     if (!stream) {
       return {{}, Error::kReadError};
@@ -82,6 +83,10 @@ namespace onex::archive {
     // file_size_raw is the payload size from fileAmount through end of file.
     // Guard against absurd file_count that would cause reserve() OOM.
     constexpr uint64_t kMinEntrySize = 23;
+    constexpr uint32_t kMaxEntryCount = 500'000;
+    if (*file_count > kMaxEntryCount) {
+      return {{}, Error::kInvalidFormat};
+    }
     if (*file_size_raw < static_cast<uint64_t>(*file_count) * kMinEntrySize) {
       return {{}, Error::kInvalidFormat};
     }
