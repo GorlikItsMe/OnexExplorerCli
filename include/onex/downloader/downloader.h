@@ -44,6 +44,10 @@ namespace onex::downloader {
     /// Called during curl transfers with (dltotal, dlnow, ultotal, ulnow).
     void set_progress_callback(ProgressCallback cb);
 
+    /// Set a factory for creating HttpClient instances (e.g. in worker threads).
+    /// Default produces CurlHttpClient. Swap to FakeHttpClient in tests.
+    void set_client_factory(HttpClientFactory factory);
+
     /// Download multiple files in parallel using up to max_concurrent threads.
     /// Returns one result per entry in the same order as the input vector.
     auto download_batch(const std::vector<BuildInfoEntry>& entries,

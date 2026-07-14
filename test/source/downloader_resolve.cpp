@@ -137,3 +137,21 @@ TEST_CASE("download_batch with all folders returns all-skipped") {
   CHECK(results[0].status);
   CHECK(results[0].status.value == onex::downloader::FileStatus::kSkipped);
 }
+
+TEST_CASE("download_batch uses custom client factory") {
+  auto d = makeDownloader();
+  BuildInfoEntry e;
+  e.file = "NostaleData\\test.txt";
+  e.path = "/game/nostale/test.txt";
+  e.folder = false;
+
+  bool factory_called = false;
+  d.set_client_factory([&]() -> std::unique_ptr<HttpClient> {
+    factory_called = true;
+    return std::make_unique<FakeHttpClient>();
+  });
+
+  auto results = d.download_batch({e}, "/tmp", 1);
+  CHECK(factory_called);
+  CHECK(results.size() == 1);
+}

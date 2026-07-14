@@ -14,6 +14,11 @@ namespace onex::downloader {
   using ProgressCallback = std::function<void(int64_t dltotal, int64_t dlnow,
                                               int64_t ultotal, int64_t ulnow)>;
 
+  class HttpClient;
+
+  /// Factory for creating HttpClient instances (enables DI in tests).
+  using HttpClientFactory = std::function<std::unique_ptr<HttpClient>()>;
+
   struct HttpResponse {
     int status_code = 0;
     std::vector<byte> body;

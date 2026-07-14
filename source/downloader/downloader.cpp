@@ -58,6 +58,7 @@ namespace onex::downloader {
     std::string build_id;
     std::unique_ptr<HttpClient> http;
     ProgressCallback progress_cb;
+    HttpClientFactory client_factory = [] { return std::make_unique<CurlHttpClient>(); };
   };
 
   GameforgeDownloader::GameforgeDownloader(std::string game_id, std::string build_id,
@@ -113,6 +114,10 @@ namespace onex::downloader {
 
   void GameforgeDownloader::set_progress_callback(ProgressCallback cb) {
     impl_->progress_cb = std::move(cb);
+  }
+
+  void GameforgeDownloader::set_client_factory(HttpClientFactory factory) {
+    impl_->client_factory = std::move(factory);
   }
 
   auto GameforgeDownloader::make_manifest_url() const -> std::string {
@@ -193,8 +198,24 @@ namespace onex::downloader {
 
     std::mutex queue_mtx;
 
-    auto worker = [&]() {
-      CurlHttpClient http{};
+    std::vector<std::thread> threads;
+    threads.reserve(n);
+
+    // RAII guard — joins any remaining threads on scope exit (e.g. exception during creation)
+    auto guard = [](std::vector<std::thread>& t) {
+      struct Joiner {
+        std::vector<std::thread>& t;
+        ~Joiner() {
+          for (auto& th : t) {
+            if (th.joinable()) th.join();
+          }
+        }
+      };
+      return Joiner{t};
+    }(threads);
+
+    auto worker = [&, factory = impl_->client_factory]() {
+      auto http = factory();
 
       for (;;) {
         std::size_t idx;
@@ -207,19 +228,15 @@ namespace onex::downloader {
           pending.pop();
         }
 
-        auto status = download_file_with_client(entries[idx], target_dir, http);
+        auto status = download_file_with_client(entries[idx], target_dir, *http);
         results[idx].status = status;
       }
     };
 
-    std::vector<std::thread> threads;
-    threads.reserve(n);
     for (int i = 0; i < n; ++i) {
       threads.emplace_back(worker);
     }
-    for (auto& t : threads) {
-      t.join();
-    }
+    // guard destructor joins threads when leaving scope
 
     return results;
   }
