@@ -41,5 +41,11 @@ jobs:
           cd build
           ctest --build-config Debug
 
+      - name: configure standalone
+        run: cmake -Sstandalone -Bbuild-standalone -DCMAKE_BUILD_TYPE=Release
+
+      - name: build standalone
+        run: cmake --build build-standalone -j4
+
       - name: collect code coverage
         run: bash <(curl -s https://codecov.io/bash) || echo "Codecov did not collect coverage reports"
