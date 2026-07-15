@@ -48,3 +48,9 @@ jobs:
         run: |
           cd build
           ctest --build-config Debug
+
+      - name: configure standalone
+        run: cmake -Sstandalone -Bbuild-standalone -DCMAKE_BUILD_TYPE=Release -DCMAKE_TOOLCHAIN_FILE="C:/vcpkg/scripts/buildsystems/vcpkg.cmake"
+
+      - name: build standalone
+        run: cmake --build build-standalone --config Release -j4

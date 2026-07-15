@@ -12,7 +12,6 @@ on:
 
 env:
   CTEST_OUTPUT_ON_FAILURE: 1
-  CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
   CPM_SOURCE_CACHE: ${{ github.workspace }}/cpm_modules
 
 jobs:
@@ -31,7 +30,7 @@ jobs:
         run: sudo apt-get update && sudo apt-get install -y libcurl4-openssl-dev
 
       - name: configure
-        run: cmake -Stest -Bbuild -DENABLE_TEST_COVERAGE=1 -DCMAKE_BUILD_TYPE=Debug
+        run: cmake -Stest -Bbuild -DCMAKE_BUILD_TYPE=Debug
 
       - name: build
         run: cmake --build build -j4
@@ -41,5 +40,8 @@ jobs:
           cd build
           ctest --build-config Debug
 
-      - name: collect code coverage
-        run: bash <(curl -s https://codecov.io/bash) || echo "Codecov did not collect coverage reports"
+      - name: configure standalone
+        run: cmake -Sstandalone -Bbuild-standalone -DCMAKE_BUILD_TYPE=Release
+
+      - name: build standalone
+        run: cmake --build build-standalone -j4
