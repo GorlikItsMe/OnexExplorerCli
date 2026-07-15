@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import os
+import shlex
 import shutil
 import statistics
 import subprocess
@@ -17,12 +18,22 @@ from config import REPO_ROOT, TEMP_DIR
 # ---------------------------------------------------------------------------
 
 
+def _normalize(manifest_path: str) -> str:
+    """Normalise manifest backslashes to forward slashes."""
+    return manifest_path.replace("\\", "/")
+
+
+def _filename(manifest_path: str) -> str:
+    """Extract just the filename from a manifest path."""
+    return _normalize(manifest_path).split("/")[-1]
+
+
 def _resolve_nos_file(manifest_path: str) -> Path:
     """Find a .NOS file in known data directories."""
-    normalised = manifest_path.replace("\\", "/")
+    normalized = _normalize(manifest_path)
     for p in [
-        REPO_ROOT / "temp" / "nostale" / normalised,
-        REPO_ROOT / "temp" / "downloads" / normalised,
+        REPO_ROOT / "temp" / "nostale" / normalized,
+        REPO_ROOT / "temp" / "downloads" / normalized,
     ]:
         if p.is_file():
             return p
@@ -39,14 +50,19 @@ def _ensure_downloaded(cli: Path, manifest_path: str) -> Path:
         return _resolve_nos_file(manifest_path)
     except FileNotFoundError:
         print(f"    downloading {manifest_path}…", file=sys.stderr, flush=True)
-        name = manifest_path.replace("\\", "/").split("/")[-1].replace(".NOS", "")
+        name = _filename(manifest_path).replace(".NOS", "")
         out = REPO_ROOT / "temp" / "nostale" / "NostaleData"
         out.mkdir(parents=True, exist_ok=True)
-        subprocess.run(
+        r = subprocess.run(
             [str(cli), "download", "--build-id", "latest",
              "-o", str(out), name],
             capture_output=True, text=True, timeout=300,
         )
+        if r.returncode != 0:
+            msg = r.stderr.strip() or r.stdout.strip() or "unknown error"
+            raise RuntimeError(
+                f"download failed for {manifest_path}: {msg}"
+            )
         return _resolve_nos_file(manifest_path)
 
 
@@ -89,7 +105,7 @@ def _run_cli(cli: Path, command: str, nos_path: Path,
         args += ["/usr/bin/time", "--format", f"{MEM_PREFIX}%M"]
 
     args += [str(cli)]
-    args += command.split()  # "info --json" → ["info", "--json"]
+    args += shlex.split(command)  # "info --json" → ["info", "--json"]
     args += [str(nos_path)]
     if command == "extract":
         if output_dir is None:
@@ -110,17 +126,24 @@ def _run_cli(cli: Path, command: str, nos_path: Path,
 
     return proc, memory_kb
 
-
 # ---------------------------------------------------------------------------
 # Main benchmark loop
 # ---------------------------------------------------------------------------
+
+
+def _prepare_extract_dir(name: str, temp_dir: Path) -> Path:
+    """Create and return the extract output directory for a test name."""
+    safe = name.replace(" ", "_").replace("(", "").replace(")", "")
+    d = temp_dir / f"extract_{safe}"
+    d.mkdir(parents=True, exist_ok=True)
+    return d
+
 
 def run_benchmark(cli: Path,
                   tests: List[Tuple[str, str, List[str]]],
                   iterations: int,
                   warmup: int,
-                  temp_dir: Path,
-                  skip_download: bool = False) -> Dict[str, dict]:
+                  temp_dir: Path) -> Dict[str, dict]:
     """Run the full benchmark suite.
 
     Returns a nested dict:
@@ -137,12 +160,8 @@ def run_benchmark(cli: Path,
     results: Dict[str, dict] = {}
 
     for name, manifest_path, commands in tests:
-        # Download / resolve
-        filename = manifest_path.replace("\\", "/").split("/")[-1]
-        if skip_download:
-            nos_path = _resolve_nos_file(manifest_path)
-        else:
-            nos_path = _ensure_downloaded(cli, manifest_path)
+        nos_path = _ensure_downloaded(cli, manifest_path)
+        filename = _filename(manifest_path)
         file_size = os.path.getsize(nos_path)
 
         print(f"\n  {name}  ({filename})", file=sys.stderr, flush=True)
@@ -153,22 +172,17 @@ def run_benchmark(cli: Path,
             print(f"  · {command}", end="", file=sys.stderr, flush=True)
 
             measurements: List[Tuple[float, Optional[int], bool]] = []
-            out_dir: Optional[Path] = None
-            if command == "extract":
-                safe = name.replace(" ", "_").replace("(", "").replace(")", "")
-                out_dir = temp_dir / f"extract_{safe}"
+            out_dir = _prepare_extract_dir(name, temp_dir) if command == "extract" else None
 
-            # Warmup
+            # Warmup (no memory measurement)
             for _ in range(warmup):
-                if command == "extract" and out_dir and out_dir.exists():
-                    shutil.rmtree(out_dir)
-                    out_dir.mkdir(parents=True, exist_ok=True)
                 _run_cli(cli, command, nos_path, out_dir, measure_memory=False)
 
             # Measured runs
-            for _ in range(iterations):
-                if command == "extract" and out_dir and out_dir.exists():
-                    shutil.rmtree(out_dir)
+            for i in range(iterations):
+                if command == "extract":
+                    assert out_dir is not None  # set above for extract
+                    shutil.rmtree(out_dir, ignore_errors=True)
                     out_dir.mkdir(parents=True, exist_ok=True)
 
                 start = time.perf_counter()

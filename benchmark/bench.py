@@ -20,7 +20,7 @@ from typing import Any, Dict, List, Optional
 
 from config import BENCH_ITERATIONS, BENCH_TESTS, BENCH_WARMUP, REPO_ROOT, TEMP_DIR
 from report import build_json_report, print_report
-from runner import run_benchmark
+from runner import _ensure_downloaded, run_benchmark
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -196,7 +196,6 @@ def main(argv: Optional[List[str]] = None) -> int:
 
     # Download-only mode
     if args.download_only:
-        from runner import _ensure_downloaded
         for mp in all_manifest_paths:
             _ensure_downloaded(cli, mp)
         print("  All files downloaded.", file=sys.stderr)

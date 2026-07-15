@@ -66,8 +66,8 @@ def print_report(results: Dict[str, dict],
 
         for idx, (cmd, s) in enumerate(entry["operations"].items()):
             left = label if idx == 0 else ""
-            mem = (f"{s['memory_kb'] / 1024:.1f} MB" if s.get("memory_kb")
-                   else "      N/A")
+            mem_val = s.get("memory_kb")
+            mem = f"{mem_val / 1024:.1f} MB" if mem_val is not None else "       N/A"
             print(f"  {left:<{cols['name']}} {cmd:<{cols['op']}} "
                   f"{_fmt_ms(s['min_ms']):>{cols['num']}} "
                   f"{_fmt_ms(s['median_ms']):>{cols['num']}} "
@@ -75,8 +75,9 @@ def print_report(results: Dict[str, dict],
                   f"{s['stdev_ms']:>{cols['num']}.1f}ms  {mem:>{cols['mem']}}")
             if s["successes"] < s["samples"]:
                 print(f"  {'':<{cols['name']}} {'':<{cols['op']}} "
-                      f"{'':>{cols['num']}} {'⚠ failed':>{cols['num']}} "
-                      f"{s['samples'] - s['successes']}/{s['samples']}")
+                      f"{'':>{cols['num']}} {'':>{cols['num']}} "
+                      f"{'':>{cols['num']}} {'':>{cols['num']}}  "
+                      f"{'⚠ {} / {} failed'.format(s['samples'] - s['successes'], s['samples']):>{cols['mem']}}")
         print()
 
     # Footer
