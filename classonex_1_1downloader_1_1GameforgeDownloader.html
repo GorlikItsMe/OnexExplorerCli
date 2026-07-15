@@ -28,6 +28,9 @@
               <a href="pages.html">Pages</a>
               <ol>
                 <li><a href="about.html">About</a></li>
+                <li><a href="usage.html">Usage</a></li>
+                <li><a href="format.html">.NOS Archive Format</a></li>
+                <li><a href="supported.html">Supported Archives</a></li>
               </ol>
             </li>
             <li><a href="namespaces.html">Namespaces</a></li>
@@ -69,11 +72,10 @@
         <section id="pub-types">
           <h2><a href="#pub-types">Public types</a></h2>
           <dl class="m-doc">
-            <dt id="a3a678c844a979a1f53004020615eb7ff">
-              <span class="m-doc-wrap-bumper">enum class <a href="#a3a678c844a979a1f53004020615eb7ff" class="m-doc-self">FileStatus</a> { </span><span class="m-doc-wrap"><a href="#a3a678c844a979a1f53004020615eb7ffa4cbe4bb610e4f5071eab3cd49f745067" class="m-doc">kDownloaded</a>,
-              <a href="#a3a678c844a979a1f53004020615eb7ffaf83deabecb881f963501ddab928fb58a" class="m-doc">kSkipped</a> }</span>
+            <dt id="a5d262dc9413044ecad83d0c0bb51a43d">
+              using <a href="#a5d262dc9413044ecad83d0c0bb51a43d" class="m-doc-self">FileStatus</a> = <a href="namespaceonex_1_1downloader.html#ace7907da728cbfcc39d6037ae045734c" class="m-doc">onex::<wbr />downloader::<wbr />FileStatus</a>
             </dt>
-            <dd><span></span></dd>
+            <dd>Backward compatibility alias for the moved <a href="classonex_1_1downloader_1_1GameforgeDownloader.html#a5d262dc9413044ecad83d0c0bb51a43d" class="m-doc">FileStatus</a> enum.</dd>
           </dl>
         </section>
         <section id="typeless-methods">
@@ -105,10 +107,47 @@
             <dd><span></span></dd>
             <dt id="a6c4792c047f536389aa3b8730b0e4c37">
               <span class="m-doc-wrap-bumper">auto <a href="#a6c4792c047f536389aa3b8730b0e4c37" class="m-doc-self">download_file</a>(</span><span class="m-doc-wrap">const <a href="structonex_1_1downloader_1_1BuildInfoEntry.html" class="m-doc">BuildInfoEntry</a>&amp; entry,
-              const std::string&amp; target_dir) -&gt; <a href="structonex_1_1Result.html" class="m-doc">Result</a>&lt;<a href="classonex_1_1downloader_1_1GameforgeDownloader.html#a3a678c844a979a1f53004020615eb7ff" class="m-doc">FileStatus</a>&gt;</span>
+              const std::string&amp; target_dir) -&gt; <a href="structonex_1_1Result.html" class="m-doc">Result</a>&lt;<a href="namespaceonex_1_1downloader.html#ace7907da728cbfcc39d6037ae045734c" class="m-doc">FileStatus</a>&gt;</span>
             </dt>
             <dd><span></span></dd>
+            <dt>
+              <span class="m-doc-wrap-bumper">void <a href="#a22e0a9a7a00411a9c679233f23e60661" class="m-doc">set_progress_callback</a>(</span><span class="m-doc-wrap"><a href="namespaceonex_1_1downloader.html#a1801a10d93cadae9d01b668b13417fb0" class="m-doc">ProgressCallback</a> cb)</span>
+            </dt>
+            <dd></dd>
+            <dt>
+              <span class="m-doc-wrap-bumper">void <a href="#af1929b8f40a40fed4373127200fa5274" class="m-doc">set_client_factory</a>(</span><span class="m-doc-wrap"><a href="namespaceonex_1_1downloader.html#a97ededbb114ee3761328667ac419f888" class="m-doc">HttpClientFactory</a> factory)</span>
+            </dt>
+            <dd></dd>
+            <dt>
+              <span class="m-doc-wrap-bumper">auto <a href="#ae7a6b9cb910b99aa9c568bc22de09be2" class="m-doc">download_batch</a>(</span><span class="m-doc-wrap">const std::vector&lt;<a href="structonex_1_1downloader_1_1BuildInfoEntry.html" class="m-doc">BuildInfoEntry</a>&gt;&amp; entries,
+              const std::string&amp; target_dir,
+              int max_concurrent) -&gt; std::vector&lt;<a href="structonex_1_1downloader_1_1BatchResult.html" class="m-doc">BatchResult</a>&gt;</span>
+            </dt>
+            <dd></dd>
           </dl>
+        </section>
+        <section>
+          <h2>Function documentation</h2>
+          <section class="m-doc-details" id="a22e0a9a7a00411a9c679233f23e60661"><div>
+            <h3>
+              <span class="m-doc-wrap-bumper">void onex::<wbr />downloader::<wbr />GameforgeDownloader::<wbr /></span><span class="m-doc-wrap"><span class="m-doc-wrap-bumper"><a href="#a22e0a9a7a00411a9c679233f23e60661" class="m-doc-self">set_progress_callback</a>(</span><span class="m-doc-wrap"><a href="namespaceonex_1_1downloader.html#a1801a10d93cadae9d01b668b13417fb0" class="m-doc">ProgressCallback</a> cb)</span></span>
+            </h3>
+<p>Set a progress callback for sequential downloads. Called during curl transfers with (dltotal, dlnow, ultotal, ulnow).</p>
+          </div></section>
+          <section class="m-doc-details" id="af1929b8f40a40fed4373127200fa5274"><div>
+            <h3>
+              <span class="m-doc-wrap-bumper">void onex::<wbr />downloader::<wbr />GameforgeDownloader::<wbr /></span><span class="m-doc-wrap"><span class="m-doc-wrap-bumper"><a href="#af1929b8f40a40fed4373127200fa5274" class="m-doc-self">set_client_factory</a>(</span><span class="m-doc-wrap"><a href="namespaceonex_1_1downloader.html#a97ededbb114ee3761328667ac419f888" class="m-doc">HttpClientFactory</a> factory)</span></span>
+            </h3>
+<p>Set a factory for creating <a href="classonex_1_1downloader_1_1HttpClient.html" class="m-doc">HttpClient</a> instances (e.g. in worker threads). Default produces <a href="classonex_1_1downloader_1_1CurlHttpClient.html" class="m-doc">CurlHttpClient</a>. Swap to FakeHttpClient in tests.</p>
+          </div></section>
+          <section class="m-doc-details" id="ae7a6b9cb910b99aa9c568bc22de09be2"><div>
+            <h3>
+              <span class="m-doc-wrap-bumper">std::vector&lt;<a href="structonex_1_1downloader_1_1BatchResult.html" class="m-doc">BatchResult</a>&gt; onex::<wbr />downloader::<wbr />GameforgeDownloader::<wbr /></span><span class="m-doc-wrap"><span class="m-doc-wrap-bumper"><a href="#ae7a6b9cb910b99aa9c568bc22de09be2" class="m-doc-self">download_batch</a>(</span><span class="m-doc-wrap">const std::vector&lt;<a href="structonex_1_1downloader_1_1BuildInfoEntry.html" class="m-doc">BuildInfoEntry</a>&gt;&amp; entries,
+              const std::string&amp; target_dir,
+              int max_concurrent)</span></span>
+            </h3>
+<p>Download multiple files in parallel using up to max_concurrent threads. Returns one result per entry in the same order as the input vector.</p>
+          </div></section>
         </section>
       </div>
     </div>

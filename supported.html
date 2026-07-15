@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>OnexExplorer</title>
+  <title>Supported Archives | OnexExplorer</title>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Source+Sans+Pro:400,400i,600,600i%7CSource+Code+Pro:400,400i,600" />
   <link rel="stylesheet" href="m-dark+documentation.compiled.css" />
   <link rel="icon" href="favicon-dark.png" type="image/png" />
@@ -30,10 +30,10 @@
                 <li><a href="about.html">About</a></li>
                 <li><a href="usage.html">Usage</a></li>
                 <li><a href="format.html">.NOS Archive Format</a></li>
-                <li><a href="supported.html">Supported Archives</a></li>
+                <li><a href="supported.html" id="m-navbar-current">Supported Archives</a></li>
               </ol>
             </li>
-            <li><a href="namespaces.html" id="m-navbar-current">Namespaces</a></li>
+            <li><a href="namespaces.html">Namespaces</a></li>
           </ol>
           <ol class="m-col-t-6 m-col-m-none" start="3">
             <li><a href="annotated.html">Classes</a></li>
@@ -51,32 +51,10 @@
   <div class="m-container m-container-inflatable">
     <div class="m-row">
       <div class="m-col-l-10 m-push-l-1">
-        <h1>Namespaces</h1>
-        <ul class="m-doc">
-          <li class="m-doc-collapsible">
-            <a href="#" onclick="return toggle(this)">namespace</a> <a href="namespaceonex.html" class="m-doc">onex</a> <span class="m-doc"><span></span></span>
-            <ul class="m-doc">
-              <li>namespace <a href="namespaceonex_1_1archive.html" class="m-doc">archive</a> <span class="m-doc"><span></span></span></li>
-              <li>namespace <a href="namespaceonex_1_1downloader.html" class="m-doc">downloader</a> <span class="m-doc"><span></span></span></li>
-            </ul>
-          </li>
-        </ul>
-        <script>
-        function toggle(e) {
-            e.parentElement.className = e.parentElement.className == 'm-doc-collapsible' ?
-                'm-doc-expansible' : 'm-doc-collapsible';
-            return false;
-        }
-        /* Collapse all nodes marked as such. Doing it via JS instead of
-           directly in markup so disabling it doesn't harm usability. The list
-           is somehow regenerated on every iteration and shrinks as I change
-           the classes. It's not documented anywhere and I'm not sure if this
-           is the same across browsers, so I am going backwards in that list to
-           be sure. */
-        var collapsed = document.getElementsByClassName("collapsed");
-        for(var i = collapsed.length - 1; i >= 0; --i)
-            collapsed[i].className = 'm-doc-expansible';
-        </script>
+        <h1>
+          Supported Archives
+        </h1>
+<section id="supported_intro"><h2><a href="#supported_intro">supported_intro</a></h2><p>Different <code>.NOS</code> archive files contain different types of game data. The tables below list which archives can be opened, listed, and extracted.</p></section><section id="supported_yes"><h2><a href="#supported_yes">Supported</a></h2><p>These archives are fully supported:</p><table class="m-table"><thead><tr><th>Archive name</th><th>Description</th></tr></thead><tbody><tr><td>NSgtdData</td><td>Items, quests, skills, mobs etc. data</td></tr><tr><td>NSlangData</td><td><code>_code_lang_list</code> (ztsXXXe)</td></tr><tr><td>NScliData</td><td><code>constring.dat</code></td></tr><tr><td>NSetcData</td><td>Word list for Memory &amp; TabooStr.lst</td></tr><tr><td>NS4BbData</td><td>Big images</td></tr><tr><td>NSipData</td><td>Icons</td></tr><tr><td>NStpData</td><td>Map and model textures</td></tr><tr><td>NStpeData</td><td>Effect textures</td></tr><tr><td>NStpuData</td><td>UI textures</td></tr><tr><td>NStcData</td><td>Map grids</td></tr></tbody></table></section><section id="supported_partial"><h2><a href="#supported_partial">Partially Supported</a></h2><p>Some archives can be opened and listed but extraction of entry bodies may fail or produce incorrect data:</p><table class="m-table"><thead><tr><th>Archive name</th><th>Description</th><th>Limitation</th></tr></thead><tbody><tr><td>NSmpData</td><td>Monster-related sprites</td><td>CCINF V1.20 — openable, needs format improvements</td></tr><tr><td>NSppData</td><td>Player-related sprites</td><td>CCINF V1.20 — openable, needs format improvements</td></tr><tr><td>NSmnData</td><td>Mob-related sprite infos</td><td>Format not yet fully implemented</td></tr><tr><td>NSpnData</td><td>Player-related sprite infos</td><td>Format not yet fully implemented</td></tr><tr><td>NSmcData</td><td>Monster-related animation kits</td><td>Format not yet fully implemented</td></tr><tr><td>NSpcData</td><td>Player-related animation kits</td><td>Format not yet fully implemented</td></tr></tbody></table></section><section id="supported_no"><h2><a href="#supported_no">Not Yet Supported</a></h2><p>These archives are not yet supported:</p><table class="m-table"><thead><tr><th>Archive name</th><th>Description</th></tr></thead><tbody><tr><td>NStgData</td><td>3D Models</td></tr><tr><td>NStgeData</td><td>3D VFX models</td></tr><tr><td>NStuData</td><td>Map configs</td></tr><tr><td>NSeffData</td><td>VFX configs</td></tr><tr><td>NStsData</td><td>—</td></tr><tr><td>NStkData</td><td>—</td></tr><tr><td>NSemData</td><td>—</td></tr><tr><td>NSesData</td><td>—</td></tr><tr><td>NSedData</td><td>—</td></tr><tr><td>NSgrdData</td><td>—</td></tr><tr><td>NSpmData</td><td>—</td></tr></tbody></table></section>
       </div>
     </div>
   </div>
