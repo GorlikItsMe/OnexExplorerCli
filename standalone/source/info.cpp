@@ -14,45 +14,24 @@ namespace onex::cli {
 
   namespace {
 
-    bool header_starts_with(const onex::archive::NosArchive::Header& header, const char* prefix,
-                            size_t len) {
-      for (size_t i = 0; i < len; ++i) {
-        if (static_cast<char>(header[i]) != prefix[i]) return false;
+    auto header_hex(const onex::archive::NosArchive::Header& header) -> std::string {
+      std::string out;
+      char buf[4];
+      for (size_t i = 0; i < header.size(); ++i) {
+        if (i > 0) out += ' ';
+        std::snprintf(buf, sizeof(buf), "%02X", static_cast<unsigned char>(header[i]));
+        out += buf;
       }
-      return true;
+      return out;
     }
 
-    auto detect_format_name(const onex::archive::NosArchive::Header& header) -> std::string {
-      constexpr size_t kHeaderSize = 0x10;
-      if (header_starts_with(header, "NT Data", 7)) {
-        std::string name = "NT Data";
-        for (size_t i = 7; i < kHeaderSize; ++i) {
-          char c = static_cast<char>(header[i]);
-          if (c == '\0' || !std::isprint(static_cast<unsigned char>(c))) break;
-          name += c;
-        }
-        return name;
+    auto header_text(const onex::archive::NosArchive::Header& header) -> std::string {
+      std::string out;
+      for (auto b : header) {
+        auto c = static_cast<unsigned char>(b);
+        out += std::isprint(c) && c != 0x00 ? static_cast<char>(c) : '.';
       }
-      if (header_starts_with(header, "32GBS V1.0", 10)) return "32GBS V1.0";
-      if (header_starts_with(header, "ITEMS V1.0", 10)) return "ITEMS V1.0";
-      if (header_starts_with(header, "CCINF V1.20", 11)) return "CCINF V1.20";
-      // Try to read as readable ASCII string
-      std::string s;
-      bool ascii_only = true;
-      for (size_t i = 0; i < kHeaderSize; ++i) {
-        char c = static_cast<char>(header[i]);
-        if (c == '\0') break;
-        if (!std::isprint(static_cast<unsigned char>(c))) {
-          ascii_only = false;
-          break;
-        }
-        s += c;
-      }
-      // Only trust it if it looks like a format name (starts with letter, min 3 chars)
-      if (ascii_only && s.size() >= 3 && std::isalpha(static_cast<unsigned char>(s[0]))) {
-        return s;
-      }
-      return "Unknown (TextArchive)";
+      return out;
     }
 
   }  // namespace
@@ -73,20 +52,23 @@ namespace onex::cli {
     // No entry IDs → show archive-level info
     if (entry_ids.empty()) {
       auto file_size = std::filesystem::file_size(filepath);
-      auto format = detect_format_name(archive.header());
+      auto h_hex = header_hex(archive.header());
+      auto h_text = header_text(archive.header());
       auto entry_count = archive.entries().size();
 
       if (json_output) {
         nlohmann::json j;
         j["file"] = filepath;
         j["file_size"] = file_size;
-        j["format"] = format;
+        j["header_hex"] = h_hex;
+        j["header_text"] = h_text;
         j["entry_count"] = entry_count;
         std::cout << j.dump() << "\n";
       } else {
         std::printf("File:             %s\n", filepath.c_str());
-        std::printf("File size:        %" PRIu64 "\n", file_size);
-        std::printf("Format:           %s\n", format.c_str());
+        std::printf("File size:        %" PRIu64 " bytes\n", file_size);
+        std::printf("Header hex:      %s\n", h_hex.c_str());
+        std::printf("Header text:     %s\n", h_text.c_str());
         std::printf("Entry count:      %zu\n", entry_count);
       }
       return 0;
