@@ -20,7 +20,7 @@ from typing import Any, Dict, List, Optional
 
 from config import BENCH_ITERATIONS, BENCH_TESTS, BENCH_WARMUP, REPO_ROOT, TEMP_DIR
 from report import build_json_report, print_report
-from runner import _ensure_downloaded, run_benchmark
+from runner import ensure_downloaded, run_benchmark
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -174,8 +174,8 @@ def main(argv: Optional[List[str]] = None) -> int:
     version = _cli_version(cli)
 
     # Gather which unique files are needed
-    all_manifest_paths = list(dict.fromkeys(mp for _, mp, _ in BENCH_TESTS))
-    all_commands = list(dict.fromkeys(c for _, _, cmds in BENCH_TESTS for c in cmds))
+    all_manifest_paths = dict.fromkeys(mp for _, mp, _ in BENCH_TESTS)
+    all_commands = dict.fromkeys(c for _, _, cmds in BENCH_TESTS for c in cmds)
 
     if not args.json:
         print()
@@ -197,7 +197,7 @@ def main(argv: Optional[List[str]] = None) -> int:
     # Download-only mode
     if args.download_only:
         for mp in all_manifest_paths:
-            _ensure_downloaded(cli, mp)
+            ensure_downloaded(cli, mp)
         print("  All files downloaded.", file=sys.stderr)
         return 0
 
@@ -217,6 +217,11 @@ def main(argv: Optional[List[str]] = None) -> int:
         return 1
     except subprocess.TimeoutExpired as e:
         print(f"\n❌ Timeout: {e}", file=sys.stderr)
+        if not args.no_cleanup and temp_dir.exists():
+            shutil.rmtree(temp_dir)
+        return 1
+    except RuntimeError as e:
+        print(f"\n❌ {e}", file=sys.stderr)
         if not args.no_cleanup and temp_dir.exists():
             shutil.rmtree(temp_dir)
         return 1

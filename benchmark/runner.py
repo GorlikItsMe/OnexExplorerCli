@@ -44,7 +44,7 @@ def _resolve_nos_file(manifest_path: str) -> Path:
     )
 
 
-def _ensure_downloaded(cli: Path, manifest_path: str) -> Path:
+def ensure_downloaded(cli: Path, manifest_path: str) -> Path:
     """Download the file if not already present, then return its path."""
     try:
         return _resolve_nos_file(manifest_path)
@@ -98,7 +98,7 @@ def _run_cli(cli: Path, command: str, nos_path: Path,
     """
     gnu_avail = _check_gnu_time() if measure_memory else False
 
-    args: list = []
+    args: list[str] = []
     mem_prefix: Optional[str] = None
     if gnu_avail:
         mem_prefix = MEM_PREFIX
@@ -133,7 +133,8 @@ def _run_cli(cli: Path, command: str, nos_path: Path,
 
 def _prepare_extract_dir(name: str, temp_dir: Path) -> Path:
     """Create and return the extract output directory for a test name."""
-    safe = name.replace(" ", "_").replace("(", "").replace(")", "")
+    import re
+    safe = re.sub(r'[^\w.-]+', '_', name).strip("_")
     d = temp_dir / f"extract_{safe}"
     d.mkdir(parents=True, exist_ok=True)
     return d
@@ -160,7 +161,7 @@ def run_benchmark(cli: Path,
     results: Dict[str, dict] = {}
 
     for name, manifest_path, commands in tests:
-        nos_path = _ensure_downloaded(cli, manifest_path)
+        nos_path = ensure_downloaded(cli, manifest_path)
         filename = _filename(manifest_path)
         file_size = os.path.getsize(nos_path)
 
@@ -176,6 +177,10 @@ def run_benchmark(cli: Path,
 
             # Warmup (no memory measurement)
             for _ in range(warmup):
+                if command == "extract":
+                    assert out_dir is not None
+                    shutil.rmtree(out_dir, ignore_errors=True)
+                    out_dir.mkdir(parents=True, exist_ok=True)
                 _run_cli(cli, command, nos_path, out_dir, measure_memory=False)
 
             # Measured runs
