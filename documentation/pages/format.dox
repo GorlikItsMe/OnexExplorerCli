@@ -1,0 +1,141 @@
+/** @page format .NOS Archive Format
+
+  @section format_overview Overview
+
+  A `.NOS` file is a container archive used by the game NosTale to store game
+  assets. The file begins with a 16-byte header whose first bytes identify the
+  internal archive format. Currently three format variants are recognised:
+
+  | Signature          | Format                    | Description                          |
+  |--------------------|---------------------------|--------------------------------------|
+  | `NT Data`          | ZlibArchiveFormat         | Most game archives (items, textures, icons, etc.) |
+  | `32GBS V1.0`       | ZlibArchiveFormat         | Large image archives (NS4BbData)     |
+  | `ITEMS V1.0`       | ZlibArchiveFormat         | Old item data (NSipData2006)         |
+  | `CCINF V1.20`      | CcinfArchiveFormat        | Monster/sprite info archives         |
+  | _(no magic)_       | TextArchiveFormat         | Language data (NSlangData, etc.)     |
+
+  @section format_header File Header (16 bytes)
+
+  Every `.NOS` archive starts with a fixed 16-byte header:
+
+  ```
+  Offset  Size  Description
+  ─────────────────────────────────────
+  0x00    4     Magic bytes (e.g. "NT D" for "NT Data")
+  0x04    4     Usually more magic or flags
+  0x08    4     Typically the creation timestamp (uint32 LE)
+  0x0C    4     Entry table offset or flags
+  ```
+
+  The header is passed to `ArchiveFormat::detect()` which selects the correct
+  parser based on the magic bytes.
+
+  @subsection format_zlib ZlibArchiveFormat ("NT Data" / "32GBS V1.0" / "ITEMS V1.0")
+
+  This is the most common format. After the 16-byte header the entry table
+  begins:
+
+  ```
+  Offset  Size  Description
+  ─────────────────────────────────────────────
+  0x00    4     Entry count (uint32 LE)
+  0x04    1     Separator byte (usually 0x00 or 0x20)
+  0x05    —     Entry records (24 bytes each)
+  ```
+
+  Each entry record in the table:
+
+  ```
+  Offset  Size  Description
+  ─────────────────────────────────────────────
+  0x00    4     Entry ID (uint32 LE)
+  0x04    4     Absolute offset to entry data (uint32 LE)
+  ```
+
+  At the offset above, the entry data header:
+
+  ```
+  Offset  Size  Description
+  ─────────────────────────────────────────────
+  0x00    4     Creation date (uint32 LE)
+  0x04    4     Uncompressed data size (uint32 LE)
+  0x08    4     Compressed data size (uint32 LE)
+  0x0C    1     Compression flag (0 = uncompressed, 1 = zlib)
+  0x0D    —     Entry body (compressed_size bytes)
+  ```
+
+  The entry body is either raw data or zlib-compressed data depending on the
+  compression flag.
+
+  Sub-types are identified by the third byte of the header:
+
+  | Sub-type | Archive    | Content type |
+  |----------|------------|-------------|
+  | 5        | NStcData   | TileGrid    |
+  | 7        | NStpData   | Texture     |
+  | 11       | NStpeData  | Texture     |
+  | 12       | NStpuData  | Texture     |
+  | 24       | NSipData   | Icon        |
+  | 101      | NS4BbData  | Image4B     |
+  | 103      | NSipData2006 | Icon     |
+
+  @subsection format_text TextArchiveFormat (no magic)
+
+  Text archives store text-based game data such as language strings. They have
+  no unique header magic; detection is a fallback when no other format matches.
+
+  ```
+  Offset  Size  Description
+  ─────────────────────────────────────────────
+  0x00    4     Entry count (uint32 LE)
+  0x04    —     Entry records (variable size)
+  ```
+
+  Each entry record:
+
+  ```
+  Offset  Size  Description
+  ─────────────────────────────────────────────
+  0x00    4     File number (uint32 LE)
+  0x04    4     Name length (uint32 LE)
+  0x08    N     Name string (N bytes, not null-terminated)
+  0x08+N  4     Flag: 0 = .lst file, non-zero = .dat file (uint32 LE)
+  0x0C+N  4     Data size (uint32 LE)
+  0x10+N  M     Data body (M bytes)
+  ```
+
+  `.dat` files are decoded with the TextDat codec (XOR-based obfuscation).
+  `.lst` files are decoded with the TextLst codec (line-based encoding).
+
+  @subsection format_ccinf CCINF V1.20
+
+  Used for monster and sprite information archives (NSmpData, NSppData, etc.).
+
+  ```
+  Offset  Size  Description
+  ─────────────────────────────────────────────
+  0x00    12    Magic: "CCINF V1.20\x1a"
+  0x0C    4     Creation date (uint32 LE)
+  0x10    4     Total content file size (uint32 LE)
+  0x14    4     Same file size repeated (uint32 LE)
+  0x18    1     Separator (0x00)
+  0x19    4     Entry count (uint32 LE)
+  0x1D    —     Entry records (variable size)
+  ```
+
+  Each entry record describes sprite data with direction, animation, monster
+  reference, and up to 7 texture parts with sprite references.
+
+  @section format_codecs Codecs
+
+  | Codec           | Applied to                        | Method          |
+  |-----------------|-----------------------------------|-----------------|
+  | ZlibCodec       | ZlibArchiveFormat entries         | zlib decompress |
+  | TextDatCodec    | TextArchive `.dat` entries        | XOR obfuscation |
+  | TextLstCodec    | TextArchive `.lst` entries        | Line encoding   |
+
+  Image entries (Texture, Icon, Image4B, TileGrid) are additionally converted
+  from their raw pixel format to PNG during extraction. See the
+  <a href="https://github.com/GorlikItsMe/OnexExplorerCli">project README</a>
+  for supported pixel formats.
+*/

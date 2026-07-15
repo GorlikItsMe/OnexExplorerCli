@@ -1,0 +1,56 @@
+/** @page supported Supported Archives
+
+  @section supported_intro
+
+  Different `.NOS` archive files contain different types of game data. The
+  tables below list which archives can be opened, listed, and extracted.
+
+  @section supported_yes Supported
+
+  These archives are fully supported:
+
+  | Archive name | Description |
+  |---|---|
+  | NSgtdData | Items, quests, skills, mobs etc. data |
+  | NSlangData | `_code_lang_list` (ztsXXXe) |
+  | NScliData | `constring.dat` |
+  | NSetcData | Word list for Memory & TabooStr.lst |
+  | NS4BbData | Big images |
+  | NSipData | Icons |
+  | NStpData | Map and model textures |
+  | NStpeData | Effect textures |
+  | NStpuData | UI textures |
+  | NStcData | Map grids |
+
+  @section supported_partial Partially Supported
+
+  Some archives can be opened and listed but extraction of entry bodies may
+  fail or produce incorrect data:
+
+  | Archive name | Description | Limitation |
+  |---|---|---|
+  | NSmpData | Monster-related sprites | CCINF V1.20 — openable, needs format improvements |
+  | NSppData | Player-related sprites | CCINF V1.20 — openable, needs format improvements |
+  | NSmnData | Mob-related sprite infos | Format not yet fully implemented |
+  | NSpnData | Player-related sprite infos | Format not yet fully implemented |
+  | NSmcData | Monster-related animation kits | Format not yet fully implemented |
+  | NSpcData | Player-related animation kits | Format not yet fully implemented |
+
+  @section supported_no Not Yet Supported
+
+  These archives are not yet supported:
+
+  | Archive name | Description |
+  |---|---|
+  | NStgData | 3D Models |
+  | NStgeData | 3D VFX models |
+  | NStuData | Map configs |
+  | NSeffData | VFX configs |
+  | NStsData | — |
+  | NStkData | — |
+  | NSemData | — |
+  | NSesData | — |
+  | NSedData | — |
+  | NSgrdData | — |
+  | NSpmData | — |
+*/

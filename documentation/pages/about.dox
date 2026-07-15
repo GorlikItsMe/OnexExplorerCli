@@ -1,4 +1,28 @@
 /** @page about About
-  @section doc OnexExplorer Documentation
-  Auto-generated documentation for the OnexExplorer project.
+  @section about_overview
+  OnexExplorerCli is a command-line tool for unpacking and repacking `.NOS` data
+  files from the game NosTale. It is a port of the original
+  <a href="https://github.com/Pumba98/OnexExplorer">OnexExplorer</a> GUI
+  application by Pumba98.
+
+  @subsection about_features Features
+
+  - **List entries** — display the entry table of any .NOS archive with type,
+    size, and compression info; JSON output via `--json`
+  - **Show entry details** — detailed information about individual entries;
+    JSON output via `--json`
+  - **Extract entries** — decompress/decrypt entries to disk; images are
+    auto-converted to PNG
+  - **Download from CDN** — fetch .NOS archives directly from the Gameforge CDN
+    with SHA1 verification
+
+  @subsection about_license License
+
+  MIT — see the `LICENSE` file in the project root.
+
+  @subsection about_links Links
+
+  - GitHub: https://github.com/GorlikItsMe/OnexExplorerCli
+  - Original OnexExplorer: https://github.com/Pumba98/OnexExplorer
+  - Issue tracker: https://github.com/GorlikItsMe/OnexExplorerCli/issues
 */
