@@ -64,11 +64,45 @@ def ensure_downloaded(cli: Path, manifest_path: str) -> Path:
 
 
 # ---------------------------------------------------------------------------
+# CLI helpers (shared with bench.py)
+# ---------------------------------------------------------------------------
+
+
+def find_cli() -> Path:
+    """Locate the built OnexExplorerCli binary."""
+    if sys.platform == "win32":
+        candidates = [
+            REPO_ROOT / "build" / "standalone" / "Release" / "OnexExplorerCli.exe",
+            REPO_ROOT / "build" / "standalone" / "OnexExplorerCli.exe",
+            REPO_ROOT / "build" / "standalone" / "Debug" / "OnexExplorerCli.exe",
+        ]
+    else:
+        candidates = [REPO_ROOT / "build" / "standalone" / "OnexExplorerCli"]
+    for p in candidates:
+        if p.is_file():
+            return p
+    raise FileNotFoundError(
+        "OnexExplorerCli binary not found. Build it first:\n"
+        f"  cmake --build {REPO_ROOT / 'build' / 'standalone'} -j$(nproc)"
+    )
+
+
+def cli_version(cli: Path) -> str:
+    """Return the CLI version string."""
+    try:
+        r = subprocess.run([str(cli), "--version"],
+                           capture_output=True, text=True, timeout=10)
+        return r.stdout.strip() or r.stderr.strip() or "unknown"
+    except (FileNotFoundError, subprocess.TimeoutExpired,
+            subprocess.CalledProcessError):
+        return "unknown"
+
+
+# ---------------------------------------------------------------------------
 # CLI runner
 # ---------------------------------------------------------------------------
 
 MEM_PREFIX = "__MEM__"
-_GNU_TIME_WARNED = False
 
 
 @functools.cache
@@ -80,6 +114,34 @@ def _check_gnu_time() -> bool:
         return b"GNU" in (r.stdout + r.stderr)
     except (FileNotFoundError, subprocess.TimeoutExpired):
         return False
+
+
+def _build_cli_args(cli: Path, command: str, nos_path: Path,
+                    output_dir: Optional[Path] = None,
+                    gnu_avail: bool = False) -> list[str]:
+    """Build the argument list for a CLI invocation."""
+    args: list[str] = []
+    if gnu_avail:
+        args += ["/usr/bin/time", "--format", f"{MEM_PREFIX}%M"]
+    args += [str(cli)]
+    args += shlex.split(command)
+    args += [str(nos_path)]
+    if command == "extract":
+        if output_dir is None:
+            raise ValueError("output_dir required for extract")
+        args += ["-o", str(output_dir)]
+    return args
+
+
+def _parse_memory_kb(stderr: str, prefix: str) -> Optional[int]:
+    """Parse peak RSS (KB) from GNU time stderr."""
+    for line in stderr.splitlines():
+        if line.startswith(prefix):
+            digits = line[len(prefix):].strip()
+            if digits.isdigit():
+                return int(digits)
+            break
+    return None
 
 
 def _run_cli(cli: Path, command: str, nos_path: Path,
@@ -95,40 +157,12 @@ def _run_cli(cli: Path, command: str, nos_path: Path,
     consistent across all operations and doesn't affect relative
     comparisons.
     """
-    global _GNU_TIME_WARNED
     gnu_avail = _check_gnu_time() if measure_memory else False
-    if measure_memory and not gnu_avail and not _GNU_TIME_WARNED:
-        print("[WARN] GNU /usr/bin/time not found — memory tracking disabled",
-              file=sys.stderr)
-        _GNU_TIME_WARNED = True
-
-    args: list[str] = []
-    mem_prefix: Optional[str] = None
-    if gnu_avail:
-        mem_prefix = MEM_PREFIX
-        args += ["/usr/bin/time", "--format", f"{MEM_PREFIX}%M"]
-
-    args += [str(cli)]
-    args += shlex.split(command)  # "info --json" → ["info", "--json"]
-    args += [str(nos_path)]
-    if command == "extract":
-        if output_dir is None:
-            raise ValueError("output_dir required for extract")
-        args += ["-o", str(output_dir)]
-
+    args = _build_cli_args(cli, command, nos_path, output_dir, gnu_avail)
     proc = subprocess.run(args, capture_output=True, text=True, timeout=600)
-
-    # Parse memory from GNU time output (on stderr)
-    memory_kb: Optional[int] = None
-    if mem_prefix:
-        for line in proc.stderr.splitlines():
-            if line.startswith(mem_prefix):
-                digits = line[len(mem_prefix):].strip()
-                if digits.isdigit():
-                    memory_kb = int(digits)
-                break
-
+    memory_kb = _parse_memory_kb(proc.stderr, MEM_PREFIX) if gnu_avail else None
     return proc, memory_kb
+
 
 # ---------------------------------------------------------------------------
 # Main benchmark loop
@@ -136,11 +170,31 @@ def _run_cli(cli: Path, command: str, nos_path: Path,
 
 
 def _prepare_extract_dir(name: str, temp_dir: Path) -> Path:
-    """Create and return the extract output directory for a test name."""
+    """Create (or recreate) a clean extract output directory."""
     safe = re.sub(r'[^\w.-]+', '_', name).strip("_")
     d = temp_dir / f"extract_{safe}"
+    shutil.rmtree(d, ignore_errors=True)
     d.mkdir(parents=True, exist_ok=True)
     return d
+
+
+def _compute_stats(measurements: List[Tuple[float, Optional[int], bool]]) -> dict:
+    """Compute aggregate statistics from measurement tuples."""
+    times = [m[0] for m in measurements]
+    successes = sum(1 for m in measurements if m[2])
+    all_mem = [m[1] for m in measurements if m[1] is not None]
+    peak_mem = max(all_mem) if all_mem else None
+    n = len(times)
+    return {
+        "min_ms": min(times),
+        "max_ms": max(times),
+        "mean_ms": statistics.mean(times),
+        "median_ms": statistics.median(times),
+        "stdev_ms": statistics.stdev(times) if n >= 2 else 0.0,
+        "samples": n,
+        "successes": successes,
+        "memory_kb": peak_mem,
+    }
 
 
 def run_benchmark(cli: Path,
@@ -156,11 +210,15 @@ def run_benchmark(cli: Path,
             "size": 80299180,
             "operations": {
                 "list": { stats_dict },
-                "info --json": { stats_dict },
                 ...
             }
         }
     """
+    # One-time warning about memory availability
+    if not _check_gnu_time():
+        print("[WARN] GNU /usr/bin/time not found — memory tracking disabled",
+              file=sys.stderr)
+
     results: Dict[str, dict] = {}
 
     for name, manifest_path, commands in tests:
@@ -180,43 +238,17 @@ def run_benchmark(cli: Path,
 
             # Warmup (no memory measurement)
             for _ in range(warmup):
-                if command == "extract":
-                    assert out_dir is not None
-                    shutil.rmtree(out_dir, ignore_errors=True)
-                    out_dir.mkdir(parents=True, exist_ok=True)
                 _run_cli(cli, command, nos_path, out_dir, measure_memory=False)
 
             # Measured runs
-            for i in range(iterations):
-                if command == "extract":
-                    assert out_dir is not None  # set above for extract
-                    shutil.rmtree(out_dir, ignore_errors=True)
-                    out_dir.mkdir(parents=True, exist_ok=True)
-
+            for _ in range(iterations):
                 start = time.perf_counter()
                 proc, mem = _run_cli(cli, command, nos_path, out_dir,
                                      measure_memory=True)
                 elapsed = (time.perf_counter() - start) * 1000.0
                 measurements.append((elapsed, mem, proc.returncode == 0))
 
-            # Compute stats
-            times = [m[0] for m in measurements]
-            successes = sum(1 for m in measurements if m[2])
-            all_mem = [m[1] for m in measurements if m[1] is not None]
-            peak_mem = max(all_mem) if all_mem else None
-            n = len(times)
-
-            stats = {
-                "min_ms": min(times),
-                "max_ms": max(times),
-                "mean_ms": statistics.mean(times),
-                "median_ms": statistics.median(times),
-                "stdev_ms": statistics.stdev(times) if n >= 2 else 0.0,
-                "samples": n,
-                "successes": successes,
-                "memory_kb": peak_mem,
-            }
-
+            stats = _compute_stats(measurements)
             entry["operations"][command] = stats
             print(f"  min={stats['min_ms']:.1f}ms  "
                   f"median={stats['median_ms']:.1f}ms  "

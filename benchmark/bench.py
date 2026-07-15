@@ -16,43 +16,15 @@ import shutil
 import subprocess
 import sys
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, Optional
 
 from config import BENCH_ITERATIONS, BENCH_TESTS, BENCH_WARMUP, REPO_ROOT, TEMP_DIR
 from report import build_json_report, print_report
-from runner import ensure_downloaded, run_benchmark
+from runner import cli_version, ensure_downloaded, find_cli, run_benchmark
 
 # ---------------------------------------------------------------------------
-# Helpers
+# Platform info
 # ---------------------------------------------------------------------------
-
-
-def _find_cli() -> Path:
-    if sys.platform == "win32":
-        candidates = [
-            REPO_ROOT / "build" / "standalone" / "Release" / "OnexExplorerCli.exe",
-            REPO_ROOT / "build" / "standalone" / "OnexExplorerCli.exe",
-            REPO_ROOT / "build" / "standalone" / "Debug" / "OnexExplorerCli.exe",
-        ]
-    else:
-        candidates = [REPO_ROOT / "build" / "standalone" / "OnexExplorerCli"]
-    for p in candidates:
-        if p.is_file():
-            return p
-    raise FileNotFoundError(
-        "OnexExplorerCli binary not found. Build it first:\n"
-        f"  cmake --build {REPO_ROOT / 'build' / 'standalone'} -j$(nproc)"
-    )
-
-
-def _cli_version(cli: Path) -> str:
-    try:
-        r = subprocess.run([str(cli), "--version"],
-                           capture_output=True, text=True, timeout=10)
-        return r.stdout.strip() or r.stderr.strip() or "unknown"
-    except (FileNotFoundError, subprocess.TimeoutExpired,
-            subprocess.CalledProcessError):
-        return "unknown"
 
 
 def _platform_info() -> Dict[str, Any]:
@@ -145,7 +117,8 @@ def _platform_info() -> Dict[str, Any]:
 # CLI
 # ---------------------------------------------------------------------------
 
-def parse_args(argv: Optional[List[str]] = None) -> argparse.Namespace:
+
+def parse_args(argv: Optional[list[str]] = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         description="Benchmark OnexExplorerCli operations on archive files."
     )
@@ -162,21 +135,21 @@ def parse_args(argv: Optional[List[str]] = None) -> argparse.Namespace:
     return parser.parse_args(argv)
 
 
-def main(argv: Optional[List[str]] = None) -> int:
+def main(argv: Optional[list[str]] = None) -> int:
     args = parse_args(argv)
 
     try:
-        cli = _find_cli()
+        cli = find_cli()
     except FileNotFoundError as e:
         print(f"[ERROR] {e}", file=sys.stderr)
         return 1
 
     info = _platform_info()
-    version = _cli_version(cli)
+    version = cli_version(cli)
 
     # Gather which unique files are needed
-    all_manifest_paths = dict.fromkeys(mp for _, mp, _ in BENCH_TESTS)
-    all_commands = dict.fromkeys(c for _, _, cmds in BENCH_TESTS for c in cmds)
+    all_manifest_paths = {mp for _, mp, _ in BENCH_TESTS}
+    all_commands = {c for _, _, cmds in BENCH_TESTS for c in cmds}
 
     if not args.json:
         print()
@@ -202,7 +175,7 @@ def main(argv: Optional[List[str]] = None) -> int:
         print("  All files downloaded.", file=sys.stderr)
         return 0
 
-    # Run benchmarks
+    # Run benchmarks (cleanup is guaranteed via try/finally)
     try:
         results = run_benchmark(
             cli=cli,
@@ -211,21 +184,12 @@ def main(argv: Optional[List[str]] = None) -> int:
             warmup=args.warmup,
             temp_dir=temp_dir,
         )
-    except FileNotFoundError as e:
+    except (FileNotFoundError, subprocess.TimeoutExpired, RuntimeError) as e:
         print(f"\n[ERROR] {e}", file=sys.stderr)
+        return 1
+    finally:
         if not args.no_cleanup and temp_dir.exists():
             shutil.rmtree(temp_dir)
-        return 1
-    except subprocess.TimeoutExpired as e:
-        print(f"\n[ERROR] Timeout: {e}", file=sys.stderr)
-        if not args.no_cleanup and temp_dir.exists():
-            shutil.rmtree(temp_dir)
-        return 1
-    except RuntimeError as e:
-        print(f"\n[ERROR] {e}", file=sys.stderr)
-        if not args.no_cleanup and temp_dir.exists():
-            shutil.rmtree(temp_dir)
-        return 1
 
     # Report
     if args.json:
@@ -234,10 +198,6 @@ def main(argv: Optional[List[str]] = None) -> int:
         print()
     else:
         print_report(results, info, version, args.iterations, args.warmup)
-
-    # Cleanup
-    if not args.no_cleanup and temp_dir.exists():
-        shutil.rmtree(temp_dir)
 
     return 0
 
