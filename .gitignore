@@ -3,3 +3,6 @@
 .DS_Store
 compile_commands.json
 temp/
+__pycache__/
+*.pyc
+benchmark/temp/
