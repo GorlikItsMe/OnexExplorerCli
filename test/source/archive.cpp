@@ -261,14 +261,13 @@ TEST_CASE("NosArchive::read_entry decodes text entries from NScliData_UK.NOS") {
 
   // Try reading every entry; at least one should decode to non-empty content
   bool found_info = false;
-  bool found_ok   = false;
+  bool found_ok = false;
   for (size_t i = 0; i < entries.size(); ++i) {
     auto data = result.value.read_entry(i);
     if (!data) continue;
-    std::string_view content(
-        reinterpret_cast<const char*>(data.value.data()), data.value.size());
+    std::string_view content(reinterpret_cast<const char*>(data.value.data()), data.value.size());
     if (content.find("Info") != std::string_view::npos) found_info = true;
-    if (content.find("OK")   != std::string_view::npos) found_ok   = true;
+    if (content.find("OK") != std::string_view::npos) found_ok = true;
   }
   CHECK(found_info);
   CHECK(found_ok);
