@@ -2,9 +2,15 @@ cmake_minimum_required(VERSION 3.14...3.22)
 
 # ---- Project ----
 
+# Default 0.0.0 for local/dev builds. Release CI overrides via -DONEX_EXPLORER_CLI_VERSION=<tag>.
+set(ONEX_EXPLORER_CLI_VERSION
+    "0.0.0"
+    CACHE STRING "Project version"
+)
+
 project(
   OnexExplorer
-  VERSION 1.0
+  VERSION ${ONEX_EXPLORER_CLI_VERSION}
   LANGUAGES CXX
 )
 
