@@ -1,4 +1,10 @@
-#include <unistd.h>
+#ifdef _WIN32
+#  include <io.h>
+#  define onex_isatty(f) _isatty(_fileno(f))
+#else
+#  include <unistd.h>
+#  define onex_isatty(f) isatty(fileno(f))
+#endif
 
 #include <chrono>
 #include <cstdio>
@@ -116,7 +122,7 @@ namespace onex::cli {
 
     // Sequential download with live progress bar
     auto had_error = false;
-    auto is_tty = isatty(fileno(stdout));
+    auto is_tty = onex_isatty(stdout);
     for (const auto& entry : resolved) {
       auto short_name_str = short_name(entry.file);
 
