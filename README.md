@@ -83,7 +83,7 @@ OnexExplorerCli info <file> [--entry <ids...>] [--json]
 | `-h, --help`    | Print help message and exit          |
 | `-v, --version` | Print the version number and exit    |
 
-### `download` — fetch archives from the Gameforge CDN
+### download — fetch archives from the Gameforge CDN
 
 Fetches `.NOS` archive files from the Gameforge CDN. Downloads the patch manifest, resolves each archive name against it, and streams the file to disk with SHA1 verification.
 
@@ -105,7 +105,7 @@ OnexExplorerCli download -o ./downloads NSipData.NOS NostaleData\\NSipData.NOS
 OnexExplorerCli download -o ./downloads --build-id 12345 --all
 ```
 
-### `extract` — extract entries from a .NOS archive
+### extract — extract entries from a .NOS archive
 
 Reads a .NOS archive and extracts entries to disk. Image entries (Texture, Icon, Image4B, TileGrid) are automatically converted to PNG.
 
@@ -124,7 +124,7 @@ OnexExplorerCli extract path/to/file.NOS -o ./output
 OnexExplorerCli extract path/to/file.NOS -o ./output --entry 0 1 2
 ```
 
-### `list` — list entries in a .NOS archive
+### list — list entries in a .NOS archive
 
 Displays the entry table of a .NOS archive: ID, name, type, compression status, and sizes.
 
@@ -142,7 +142,7 @@ OnexExplorerCli list path/to/file.NOS
 OnexExplorerCli list path/to/file.NOS --json | jq '.[] | select(.type == "Icon")'
 ```
 
-### `info` — show entry details
+### info — show entry details
 
 Displays detailed information about entries in a .NOS archive: ID, name, type, creation date, compression, file offsets, and sizes.
 
