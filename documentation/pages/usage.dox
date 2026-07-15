@@ -1,0 +1,122 @@
+/** @page usage Usage
+
+  @section usage_global Global Options
+
+  | Option | Description |
+  |---|---|
+  | `-h, --help` | Print help message and exit |
+  | `-v, --version` | Print the version number and exit |
+
+  @section usage_download download — Fetch archives from the CDN
+
+  Downloads `.NOS` archive files from the Gameforge CDN. Resolves archive
+  names against the patch manifest and streams files to disk with SHA1
+  verification.
+
+  @code
+  OnexExplorerCli download [-o <output-dir>] [--build-id <id>] [--all] <archive-names...>
+  @endcode
+
+  | Option | Description |
+  |---|---|
+  | `-o, --output <dir>` | Target directory for downloaded files (required) |
+  | `--build-id <id>` | Build version to fetch from (default: `latest`) |
+  | `-j, --jobs <n>` | Number of download threads (1-8, default: 4) |
+  | `--all` | Download all archives in the manifest |
+  | `archive-names...` | One or more archive names from the manifest |
+
+  Resolution tries an exact `file`-field match first, then falls back to a
+  bare filename match. An error is reported if a name matches more than one
+  manifest entry. Files already present on disk with a matching SHA1 are
+  skipped.
+
+  @subsection usage_download_examples Examples
+
+  @code
+  # Download specific archives
+  OnexExplorerCli download -o ./downloads NSipData.NOS NostaleData\\NSipData.NOS
+
+  # Download all archives from a specific build
+  OnexExplorerCli download -o ./downloads --build-id 12345 --all
+
+  # Download with 8 parallel threads
+  OnexExplorerCli download -o ./downloads --jobs 8 --all
+  @endcode
+
+  @section usage_extract extract — Extract entries from an archive
+
+  Reads a `.NOS` archive and extracts entries to disk. Image entries
+  (Texture, Icon, Image4B, TileGrid) are automatically converted to PNG.
+
+  @code
+  OnexExplorerCli extract <file> -o <output-dir> [--entry <ids...>]
+  @endcode
+
+  | Option | Description |
+  |---|---|
+  | `file` | Path to the .NOS file (required) |
+  | `-o, --output <dir>` | Output directory (required) |
+  | `--entry <ids...>` | Entry IDs to extract (repeatable; default: all) |
+
+  @subsection usage_extract_examples Examples
+
+  @code
+  # Extract all entries
+  OnexExplorerCli extract path/to/file.NOS -o ./output
+
+  # Extract specific entries by ID
+  OnexExplorerCli extract path/to/file.NOS -o ./output --entry 0 1 2
+  @endcode
+
+  @section usage_list list — List entries
+
+  Displays the entry table of a `.NOS` archive: ID, name, entry type,
+  compression status, and sizes.
+
+  @code
+  OnexExplorerCli list <file> [--json]
+  @endcode
+
+  | Option | Description |
+  |---|---|
+  | `file` | Path to the .NOS file (required) |
+  | `--json` | Output as a JSON array (pipeable) |
+
+  @subsection usage_list_examples Examples
+
+  @code
+  # Human-readable table
+  OnexExplorerCli list path/to/file.NOS
+
+  # JSON output (pipeable)
+  OnexExplorerCli list path/to/file.NOS --json | jq '.[] | select(.type == "Icon")'
+  @endcode
+
+  @section usage_info info — Show entry details
+
+  Displays detailed information about entries in a `.NOS` archive: ID, name,
+  type, creation date, compression, file offsets, and sizes.
+
+  @code
+  OnexExplorerCli info <file> [--entry <ids...>] [--json]
+  @endcode
+
+  | Option | Description |
+  |---|---|
+  | `file` | Path to the .NOS file (required) |
+  | `--entry <ids...>` | Entry IDs to inspect (repeatable; default: all) |
+  | `--json` | Output as JSON (single entry or array for multiple) |
+
+  @subsection usage_info_examples Examples
+
+  @code
+  # Show all entries
+  OnexExplorerCli info path/to/file.NOS
+
+  # Show specific entries
+  OnexExplorerCli info path/to/file.NOS --entry 0 1 2
+
+  # JSON output for a single entry
+  OnexExplorerCli info path/to/file.NOS --entry 0 --json
+  @endcode
+*/
