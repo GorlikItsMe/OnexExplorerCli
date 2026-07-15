@@ -13,7 +13,7 @@ import time
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple
 
-from config import REPO_ROOT, TEMP_DIR
+from config import BenchTest, REPO_ROOT, TEMP_DIR
 
 # ---------------------------------------------------------------------------
 # File resolution & download
@@ -93,8 +93,7 @@ def cli_version(cli: Path) -> str:
         r = subprocess.run([str(cli), "--version"],
                            capture_output=True, text=True, timeout=10)
         return r.stdout.strip() or r.stderr.strip() or "unknown"
-    except (FileNotFoundError, subprocess.TimeoutExpired,
-            subprocess.CalledProcessError):
+    except (FileNotFoundError, subprocess.TimeoutExpired):
         return "unknown"
 
 
@@ -146,18 +145,19 @@ def _parse_memory_kb(stderr: str, prefix: str) -> Optional[int]:
 
 def _run_cli(cli: Path, command: str, nos_path: Path,
              output_dir: Optional[Path] = None,
-             measure_memory: bool = False) -> Tuple[subprocess.CompletedProcess, Optional[int]]:
+             gnu_avail: bool = False) -> Tuple[subprocess.CompletedProcess, Optional[int]]:
     """Run a single CLI operation.
 
     *command* is a string like "list", "info --json", or "extract".
     It is split on space to build the argument list.
+    *gnu_avail* is True once GNU /usr/bin/time has been verified and
+    the warning printed — if False, memory is never tracked.
 
     Note: timing via time.perf_counter() around subprocess.run()
     includes 1-5 ms of Python overhead per invocation. This is
     consistent across all operations and doesn't affect relative
     comparisons.
     """
-    gnu_avail = _check_gnu_time() if measure_memory else False
     args = _build_cli_args(cli, command, nos_path, output_dir, gnu_avail)
     proc = subprocess.run(args, capture_output=True, text=True, timeout=600)
     memory_kb = _parse_memory_kb(proc.stderr, MEM_PREFIX) if gnu_avail else None
@@ -183,7 +183,7 @@ def _compute_stats(measurements: List[Tuple[float, Optional[int], bool]]) -> dic
     times = [m[0] for m in measurements]
     successes = sum(1 for m in measurements if m[2])
     all_mem = [m[1] for m in measurements if m[1] is not None]
-    peak_mem = max(all_mem) if all_mem else None
+    peak_mem = max(all_mem, default=None)
     n = len(times)
     return {
         "min_ms": min(times),
@@ -198,7 +198,7 @@ def _compute_stats(measurements: List[Tuple[float, Optional[int], bool]]) -> dic
 
 
 def run_benchmark(cli: Path,
-                  tests: List[Tuple[str, str, List[str]]],
+                  tests: List[BenchTest],
                   iterations: int,
                   warmup: int,
                   temp_dir: Path) -> Dict[str, dict]:
@@ -214,8 +214,10 @@ def run_benchmark(cli: Path,
             }
         }
     """
-    # One-time warning about memory availability
-    if not _check_gnu_time():
+    # One-time check: warn once, pass flag downstream so _run_cli
+    # never needs to call _check_gnu_time() itself.
+    can_measure = _check_gnu_time()
+    if not can_measure:
         print("[WARN] GNU /usr/bin/time not found — memory tracking disabled",
               file=sys.stderr)
 
@@ -238,13 +240,13 @@ def run_benchmark(cli: Path,
 
             # Warmup (no memory measurement)
             for _ in range(warmup):
-                _run_cli(cli, command, nos_path, out_dir, measure_memory=False)
+                _run_cli(cli, command, nos_path, out_dir, gnu_avail=False)
 
             # Measured runs
             for _ in range(iterations):
                 start = time.perf_counter()
                 proc, mem = _run_cli(cli, command, nos_path, out_dir,
-                                     measure_memory=True)
+                                     gnu_avail=can_measure)
                 elapsed = (time.perf_counter() - start) * 1000.0
                 measurements.append((elapsed, mem, proc.returncode == 0))
 

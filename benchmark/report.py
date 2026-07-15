@@ -35,10 +35,11 @@ def _fmt_ms(ms: float) -> str:
 
 
 def _fmt_size(size: int) -> str:
+    """Format a byte count as a human-readable string."""
     if size >= 1_000_000:
-        return f"{size // 1_000_000} MB"
+        return f"{round(size / 1_000_000)} MB"
     if size >= 1_000:
-        return f"{size // 1_000} KB"
+        return f"{round(size / 1_000)} KB"
     return f"{size} B"
 
 
@@ -64,19 +65,8 @@ def failure_warning(stats: OpStats) -> Optional[str]:
     return None
 
 
-def print_report(results: Dict[str, dict],
-                 platform_info: Dict[str, Any],
-                 cli_version: str,
-                 iterations: int,
-                 warmup: int) -> None:
+def print_report(results: Dict[str, dict], cfg: ReportConfig) -> None:
     """Print a formatted benchmark report to stdout."""
-    cfg = ReportConfig(
-        cli_version=cli_version,
-        iterations=iterations,
-        warmup=warmup,
-        platform_info=platform_info,
-    )
-
     # Header
     print()
     print("═" * 72)
@@ -155,19 +145,8 @@ def _op_stats_to_json(stats: OpStats) -> dict:
     }
 
 
-def build_json_report(results: Dict[str, dict],
-                      platform_info: Dict[str, Any],
-                      cli_version: str,
-                      iterations: int,
-                      warmup: int) -> dict:
+def build_json_report(results: Dict[str, dict], cfg: ReportConfig) -> dict:
     """Build a JSON-serializable report dictionary."""
-    cfg = ReportConfig(
-        cli_version=cli_version,
-        iterations=iterations,
-        warmup=warmup,
-        platform_info=platform_info,
-    )
-
     results_out: dict = {}
     for name, entry in results.items():
         ops = {

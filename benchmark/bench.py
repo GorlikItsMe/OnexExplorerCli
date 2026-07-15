@@ -16,10 +16,10 @@ import shutil
 import subprocess
 import sys
 from pathlib import Path
-from typing import Any, Dict, Optional
+from typing import Any, Dict, List, Optional
 
 from config import BENCH_ITERATIONS, BENCH_TESTS, BENCH_WARMUP, REPO_ROOT, TEMP_DIR
-from report import build_json_report, print_report
+from report import ReportConfig, build_json_report, print_report
 from runner import cli_version, ensure_downloaded, find_cli, run_benchmark
 
 # ---------------------------------------------------------------------------
@@ -38,12 +38,7 @@ def _platform_info() -> Dict[str, Any]:
         info["os"] = f"{platform.system()} {platform.release()}"
 
     if platform.system() == "Linux":
-        try:
-            with open("/proc/version") as f:
-                r = f.read().strip()
-                info["kernel"] = r.split(" (")[0] if "(" in r else r
-        except OSError:
-            pass
+        info["kernel"] = platform.uname().release
     info["platform"] = platform.platform(terse=True)
 
     cpu: Optional[str] = None
@@ -147,11 +142,11 @@ def main(argv: Optional[list[str]] = None) -> int:
     info = _platform_info()
     version = cli_version(cli)
 
-    # Gather which unique files are needed
+    # Unique manifest paths needed (used for download-only mode)
     all_manifest_paths = {mp for _, mp, _ in BENCH_TESTS}
-    all_commands = {c for _, _, cmds in BENCH_TESTS for c in cmds}
 
     if not args.json:
+        all_commands = {c for _, _, cmds in BENCH_TESTS for c in cmds}
         print()
         print("  OnexExplorerCli Benchmark")
         print(f"  Binary: {cli}")
@@ -164,9 +159,6 @@ def main(argv: Optional[list[str]] = None) -> int:
     # Prepare temp dir
     temp_dir = TEMP_DIR
     temp_dir.mkdir(parents=True, exist_ok=True)
-    for item in temp_dir.iterdir():
-        if item.is_dir():
-            shutil.rmtree(item)
 
     # Download-only mode
     if args.download_only:
@@ -192,12 +184,17 @@ def main(argv: Optional[list[str]] = None) -> int:
             shutil.rmtree(temp_dir)
 
     # Report
+    cfg = ReportConfig(
+        cli_version=version,
+        iterations=args.iterations,
+        warmup=args.warmup,
+        platform_info=info,
+    )
     if args.json:
-        report = build_json_report(results, info, version, args.iterations, args.warmup)
-        json.dump(report, sys.stdout, indent=2)
+        json.dump(build_json_report(results, cfg), sys.stdout, indent=2)
         print()
     else:
-        print_report(results, info, version, args.iterations, args.warmup)
+        print_report(results, cfg)
 
     return 0
 
