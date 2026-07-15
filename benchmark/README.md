@@ -19,15 +19,9 @@ python3 -m benchmark --iterations 1 --warmup 0
 # JSON output
 python3 -m benchmark --json
 
-# Only download files (no benchmark)
-python3 -m benchmark --download-only
-
-# Keep temp files (don't clean extract dirs)
-python3 -m benchmark --no-cleanup
 ```
 
 Files are auto-downloaded via `download --build-id latest` on first run.
-Use `--download-only` to pre-fetch them.
 
 ## Configuration
 
@@ -73,8 +67,7 @@ columns. `build_json_report()` produces a machine-readable JSON document.
 
 ### `bench.py`
 Entry point. Parses CLI flags, dispatches to runner and reporter, handles
-cleanup. Supports `--iterations`, `--warmup`, `--json`, `--no-cleanup`,
-`--download-only`.
+cleanup. Supports `--iterations`, `--warmup`, `--json`.
 
 ## Operations
 
@@ -136,7 +129,6 @@ The JSON document contains the same data in a structured format with
 ## Notes
 
 - **File sizes** are read from disk at runtime (`os.path.getsize`) — not hardcoded.
-- **Extract temp files** go to `benchmark/temp/` and are cleaned up after each run
-  (use `--no-cleanup` to inspect them).
+- **Extract temp files** go to `benchmark/temp/` and are cleaned up after each run.
 - **σ** is sample standard deviation (denominator `n-1`). With 1 iteration it is
   always 0.0.

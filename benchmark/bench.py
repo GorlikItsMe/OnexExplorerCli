@@ -6,6 +6,7 @@ Usage:
     python3 -m benchmark --iterations 3 --warmup 0
     python3 -m benchmark --json
 """
+
 from __future__ import annotations
 
 import argparse
@@ -33,6 +34,7 @@ def _platform_info() -> Dict[str, Any]:
 
     try:
         import distro
+
         info["os"] = f"{distro.name(pretty=True)}"
     except ImportError:
         info["os"] = f"{platform.system()} {platform.release()}"
@@ -53,16 +55,24 @@ def _platform_info() -> Dict[str, Any]:
             pass
     elif platform.system() == "Darwin":
         try:
-            r = subprocess.run(["sysctl", "-n", "machdep.cpu.brand_string"],
-                               capture_output=True, text=True, timeout=5)
+            r = subprocess.run(
+                ["sysctl", "-n", "machdep.cpu.brand_string"],
+                capture_output=True,
+                text=True,
+                timeout=5,
+            )
             if r.returncode == 0:
                 cpu = r.stdout.strip()
         except Exception:
             pass
     elif platform.system() == "Windows":
         try:
-            r = subprocess.run(["wmic", "cpu", "get", "name"],
-                               capture_output=True, text=True, timeout=5)
+            r = subprocess.run(
+                ["wmic", "cpu", "get", "name"],
+                capture_output=True,
+                text=True,
+                timeout=5,
+            )
             if r.returncode == 0:
                 lines = [l.strip() for l in r.stdout.splitlines() if l.strip()]
                 if len(lines) > 1:
@@ -84,19 +94,28 @@ def _platform_info() -> Dict[str, Any]:
             pass
     elif platform.system() == "Darwin":
         try:
-            r = subprocess.run(["sysctl", "-n", "hw.memsize"],
-                               capture_output=True, text=True, timeout=5)
+            r = subprocess.run(
+                ["sysctl", "-n", "hw.memsize"],
+                capture_output=True,
+                text=True,
+                timeout=5,
+            )
             if r.returncode == 0:
                 mem = int(r.stdout.strip()) // (1024 * 1024)
         except Exception:
             pass
     elif platform.system() == "Windows":
         try:
-            r = subprocess.run(["wmic", "memorychip", "get", "Capacity"],
-                               capture_output=True, text=True, timeout=5)
+            r = subprocess.run(
+                ["wmic", "memorychip", "get", "Capacity"],
+                capture_output=True,
+                text=True,
+                timeout=5,
+            )
             if r.returncode == 0:
-                caps = [int(l.strip()) for l in r.stdout.splitlines()
-                        if l.strip().isdigit()]
+                caps = [
+                    int(l.strip()) for l in r.stdout.splitlines() if l.strip().isdigit()
+                ]
                 if caps:
                     mem = sum(caps) // (1024 * 1024 * 1024)
         except Exception:
@@ -117,16 +136,19 @@ def parse_args(argv: Optional[list[str]] = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         description="Benchmark OnexExplorerCli operations on archive files."
     )
-    parser.add_argument("--iterations", type=int, default=BENCH_ITERATIONS,
-                        help=f"Measured runs per operation (default: {BENCH_ITERATIONS})")
-    parser.add_argument("--warmup", type=int, default=BENCH_WARMUP,
-                        help=f"Warmup runs per operation (default: {BENCH_WARMUP})")
-    parser.add_argument("--json", action="store_true",
-                        help="Output results as JSON")
-    parser.add_argument("--no-cleanup", action="store_true",
-                        help="Keep temp files after benchmark")
-    parser.add_argument("--download-only", action="store_true",
-                        help="Only download benchmark files, don't run")
+    parser.add_argument(
+        "--iterations",
+        type=int,
+        default=BENCH_ITERATIONS,
+        help=f"Measured runs per operation (default: {BENCH_ITERATIONS})",
+    )
+    parser.add_argument(
+        "--warmup",
+        type=int,
+        default=BENCH_WARMUP,
+        help=f"Warmup runs per operation (default: {BENCH_WARMUP})",
+    )
+    parser.add_argument("--json", action="store_true", help="Output results as JSON")
     return parser.parse_args(argv)
 
 
@@ -142,30 +164,24 @@ def main(argv: Optional[list[str]] = None) -> int:
     info = _platform_info()
     version = cli_version(cli)
 
-    # Unique manifest paths needed (used for download-only mode)
-    all_manifest_paths = {mp for _, mp, _ in BENCH_TESTS}
-
     if not args.json:
         all_commands = {c for _, _, cmds in BENCH_TESTS for c in cmds}
         print()
         print("  OnexExplorerCli Benchmark")
         print(f"  Binary: {cli}")
-        print(f"  Files:  {len(BENCH_TESTS)} ({', '.join(n for n, _, _ in BENCH_TESTS)})")
+        print(
+            f"  Files:  {len(BENCH_TESTS)} ({', '.join(n for n, _, _ in BENCH_TESTS)})"
+        )
         print(f"  Ops:    {', '.join(all_commands)}")
-        print(f"  Runs:   {args.iterations} iterations"
-              f"{' + ' + str(args.warmup) + ' warmup' if args.warmup else ''}")
+        print(
+            f"  Runs:   {args.iterations} iterations"
+            f"{' + ' + str(args.warmup) + ' warmup' if args.warmup else ''}"
+        )
         print()
 
     # Prepare temp dir
     temp_dir = TEMP_DIR
     temp_dir.mkdir(parents=True, exist_ok=True)
-
-    # Download-only mode
-    if args.download_only:
-        for mp in all_manifest_paths:
-            ensure_downloaded(cli, mp)
-        print("  All files downloaded.", file=sys.stderr)
-        return 0
 
     # Run benchmarks (cleanup is guaranteed via try/finally)
     try:
@@ -180,9 +196,8 @@ def main(argv: Optional[list[str]] = None) -> int:
         print(f"\n[ERROR] {e}", file=sys.stderr)
         return 1
     finally:
-        if not args.no_cleanup and temp_dir.exists():
+        if temp_dir.exists():
             shutil.rmtree(temp_dir)
-
     # Report
     cfg = ReportConfig(
         cli_version=version,
