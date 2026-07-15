@@ -422,11 +422,30 @@ def _fmt_ms(ms: float) -> str:
     return f"{ms:.1f}ms"
 
 
+def _file_label(label: str, filename: str, size: int) -> str:
+    """Short label: 'NS4BbData.NOS (80 MB)'"""
+    if size >= 1_000_000:
+        s = f"{size / 1_000_000:.0f} MB" if size < 100_000_000 else f"{size / 1_000_000:.0f} MB"
+    elif size >= 1_000:
+        s = f"{size / 1_000:.0f} KB"
+    else:
+        s = f"{size} B"
+    return f"{filename} ({s})"
+
+
 def print_report(results: Dict[str, Dict[str, Stats]],
                  platform_info: Dict[str, Any],
                  cli_version: str,
-                 iterations: int, warmup: int) -> None:
+                 iterations: int, warmup: int,
+                 files: Optional[List[Tuple[str, str, int]]] = None) -> None:
     """Print a formatted benchmark report to stdout."""
+
+    # Build file info lookup
+    file_info: Dict[str, Tuple[str, int]] = {}
+    if files:
+        for label, mpath, sz in files:
+            fname = mpath.replace("\\", "/").split("/")[-1]
+            file_info[label] = (fname, sz)
 
     # Header
     print()
@@ -456,23 +475,26 @@ def print_report(results: Dict[str, Dict[str, Stats]],
     # Results table
     print("  Results")
     print("  ───────")
-    header = f"{'Format':<18} {'Operation':<14} {'Min':>10} {'Median':>10} {'Max':>10} {'σ':>10}  {'Memory':>10}"
+    header = f"{'File':<30} {'Operation':<14} {'Min':>10} {'Median':>10} {'Max':>10} {'σ':>10}  {'Memory':>10}"
     print(f"  {header}")
     print(f"  {'─' * (len(header) + 2)}")
 
     for fmt_label, ops in results.items():
+        fname, fsize = file_info.get(fmt_label, (fmt_label, 0))
+        short = _file_label(fmt_label, fname, fsize)
+
         for op_idx, (op, stats) in enumerate(ops.items()):
-            label = fmt_label if op_idx == 0 else ""
+            label = short if op_idx == 0 else ""
             mem_str = ""
             if stats.memory_kb is not None:
                 mem_str = f"{stats.memory_kb:>6} KB"
             else:
                 mem_str = "      N/A"
-            print(f"  {label:<18} {op:<14} {_fmt_ms(stats.min_ms):>10} "
+            print(f"  {label:<30} {op:<14} {_fmt_ms(stats.min_ms):>10} "
                   f"{_fmt_ms(stats.median_ms):>10} {_fmt_ms(stats.max_ms):>10} "
                   f"{stats.stdev_ms:>8.1f}ms  {mem_str}")
             if stats.successes < stats.samples:
-                print(f"  {'':<18} {'':<14} {'':>10} {'⚠ failed':>10} "
+                print(f"  {'':<30} {'':<14} {'':>10} {'⚠ failed':>10} "
                       f"{stats.samples - stats.successes}/{stats.samples}")
         # Spacer between format groups
         print()
@@ -489,7 +511,8 @@ def print_report(results: Dict[str, Dict[str, Stats]],
 def build_json_report(results: Dict[str, Dict[str, Stats]],
                       platform_info: Dict[str, Any],
                       cli_version: str,
-                      args: argparse.Namespace) -> dict:
+                      args: argparse.Namespace,
+                      files: Optional[List[Tuple[str, str, int]]] = None) -> dict:
     """Build a JSON-serializable report dictionary."""
     def _stats_to_dict(s: Stats) -> dict:
         return {
@@ -503,6 +526,23 @@ def build_json_report(results: Dict[str, Dict[str, Stats]],
             "memory_kb": s.memory_kb,
         }
 
+    results_out: dict = {}
+    if files:
+        for label, mpath, sz in files:
+            fname = mpath.replace("\\", "/").split("/")[-1]
+            entry = {"file": fname, "size_bytes": sz}
+            if label in results:
+                entry["operations"] = {
+                    op: _stats_to_dict(stats) for op, stats in results[label].items()
+                }
+            results_out[label] = entry
+    else:
+        # fallback: flat format like before
+        results_out = {
+            fmt: {op: _stats_to_dict(stats) for op, stats in ops.items()}
+            for fmt, ops in results.items()
+        }
+
     return {
         "benchmark": {
             "tool": "OnexExplorerCli",
@@ -511,10 +551,7 @@ def build_json_report(results: Dict[str, Dict[str, Stats]],
             "warmup": args.warmup,
         },
         "system": platform_info,
-        "results": {
-            fmt: {op: _stats_to_dict(stats) for op, stats in ops.items()}
-            for fmt, ops in results.items()
-        },
+        "results": results_out,
     }
 
 
@@ -602,11 +639,12 @@ def main(argv: Optional[List[str]] = None) -> int:
 
     # Report
     if args.json:
-        report = build_json_report(results, info, cli_version, args)
+        report = build_json_report(results, info, cli_version, args, files=BENCH_FILES)
         json.dump(report, sys.stdout, indent=2)
         print()
     else:
-        print_report(results, info, cli_version, args.iterations, args.warmup)
+        print_report(results, info, cli_version, args.iterations, args.warmup,
+                     files=BENCH_FILES)
 
     # Cleanup
     if not args.no_cleanup and temp_dir.exists():
