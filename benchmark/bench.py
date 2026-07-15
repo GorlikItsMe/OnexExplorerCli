@@ -423,14 +423,21 @@ def _fmt_ms(ms: float) -> str:
 
 
 def _file_label(label: str, filename: str, size: int) -> str:
-    """Short label: 'NS4BbData.NOS (80 MB)'"""
+    """Short label: '32GBS | NS4BbData.NOS (80 MB)'"""
+    # Shorten format name: "Zlib (32GBS)" → "32GBS"
+    short = label
+    # Grab the parenthetical part if present
+    if "(" in label and label.endswith(")"):
+        short = label.split("(")[-1].rstrip(")")
+    elif label == "Text":
+        short = "Text"
     if size >= 1_000_000:
-        s = f"{size / 1_000_000:.0f} MB" if size < 100_000_000 else f"{size / 1_000_000:.0f} MB"
+        s = f"{size / 1_000_000:.0f} MB"
     elif size >= 1_000:
         s = f"{size / 1_000:.0f} KB"
     else:
         s = f"{size} B"
-    return f"{filename} ({s})"
+    return f"{short} | {filename} ({s})"
 
 
 def print_report(results: Dict[str, Dict[str, Stats]],
@@ -475,7 +482,7 @@ def print_report(results: Dict[str, Dict[str, Stats]],
     # Results table
     print("  Results")
     print("  ───────")
-    header = f"{'File':<30} {'Operation':<14} {'Min':>10} {'Median':>10} {'Max':>10} {'σ':>10}  {'Memory':>10}"
+    header = f"{'Name':<46} {'Operation':<14} {'Min':>10} {'Median':>10} {'Max':>10} {'σ':>10}  {'Memory':>10}"
     print(f"  {header}")
     print(f"  {'─' * (len(header) + 2)}")
 
@@ -487,14 +494,14 @@ def print_report(results: Dict[str, Dict[str, Stats]],
             label = short if op_idx == 0 else ""
             mem_str = ""
             if stats.memory_kb is not None:
-                mem_str = f"{stats.memory_kb:>6} KB"
+                mem_str = f"{stats.memory_kb / 1024:.1f} MB"
             else:
                 mem_str = "      N/A"
-            print(f"  {label:<30} {op:<14} {_fmt_ms(stats.min_ms):>10} "
+            print(f"  {label:<46} {op:<14} {_fmt_ms(stats.min_ms):>10} "
                   f"{_fmt_ms(stats.median_ms):>10} {_fmt_ms(stats.max_ms):>10} "
                   f"{stats.stdev_ms:>8.1f}ms  {mem_str}")
             if stats.successes < stats.samples:
-                print(f"  {'':<30} {'':<14} {'':>10} {'⚠ failed':>10} "
+                print(f"  {'':<46} {'':<14} {'':>10} {'⚠ failed':>10} "
                       f"{stats.samples - stats.successes}/{stats.samples}")
         # Spacer between format groups
         print()
