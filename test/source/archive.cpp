@@ -249,7 +249,7 @@ TEST_CASE(
 // Text archive integration – real file decode
 // ---------------------------------------------------------------------------
 
-TEST_CASE("NosArchive::read_entry decodes text entries from NScliData_UK.NOS") {
+TEST_CASE("NosArchive::read_entry on NScliData_UK.NOS first entry contains 'Info'") {
   auto path = ensure_fixture("NostaleData\\NScliData_UK.NOS");
 
   auto result = onex::archive::NosArchive::open(path);
@@ -258,19 +258,16 @@ TEST_CASE("NosArchive::read_entry decodes text entries from NScliData_UK.NOS") {
   auto entries = result.value.entries();
   REQUIRE(entries.size() > 0);
   CHECK(entries[0].type == onex::archive::EntryType::TextDat);
+  CHECK(entries[0].name == "conststring.dat");
 
-  // Try reading every entry; at least one should decode to non-empty content
-  bool found_info = false;
-  bool found_ok = false;
-  for (size_t i = 0; i < entries.size(); ++i) {
-    auto data = result.value.read_entry(i);
-    if (!data) continue;
-    std::string_view content(reinterpret_cast<const char*>(data.value.data()), data.value.size());
-    if (content.find("Info") != std::string_view::npos) found_info = true;
-    if (content.find("OK") != std::string_view::npos) found_ok = true;
-  }
-  CHECK(found_info);
-  CHECK(found_ok);
+  auto data = result.value.read_entry(0);
+  REQUIRE(data);
+
+  // The decrypted content should contain readable game strings
+  std::string_view content(reinterpret_cast<const char*>(data.value.data()), data.value.size());
+  CHECK(content.find("Info") != std::string_view::npos);
+  CHECK(content.find("OK") != std::string_view::npos);
+  CHECK(content.find("Name") != std::string_view::npos);
 }
 
 // ---------------------------------------------------------------------------
