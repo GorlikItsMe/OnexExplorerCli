@@ -17,6 +17,7 @@ BENCH_TESTS: List[Tuple[str, str, List[str]]] = [
     ("NT Data",     "NostaleData\\NStpData01.NOS",  ["list", "info --json", "extract"]),
     ("CCINF V1.20", "NostaleData\\NSmnData.NOS",    ["list", "info --json", "extract"]),
     ("Text",        "NostaleData\\NSgtdData.NOS",    ["list", "info --json", "extract"]),
+    ("Map",         "NostaleData\\NSmpData04.NOS",  ["list", "info --json", "extract"]),
 ]
 
 _SCRIPT_DIR = Path(__file__).resolve().parent
