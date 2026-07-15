@@ -1,5 +1,17 @@
 ## Code style
-After each code change run `cmake --build build --target check-format` to check code style. Errors are under crash trace (which is not an error in this case). Styling errors if possible.
+
+**🔴 CRITICAL: Run format check BEFORE every commit.**
+
+After EVERY code change, in this exact order:
+1. Format changed files: `clang-format -i <files>`
+2. Verify format: `cmake --build build/test --target check-format`
+   (If `build/test` doesn't have the format target, first run:
+    `cmake -Stest -Bbuild_test && cmake --build build_test --target check-format`)
+3. Build: `cmake --build build/standalone -j$(nproc)`
+4. Only then commit
+
+Errors from check-format show under a crash trace (which is not an error in this case).
+Always fix styling errors before pushing — CI runs the same check.
 
 ## Agent skills
 

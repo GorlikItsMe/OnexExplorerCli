@@ -55,8 +55,9 @@ auto main(int argc, char** argv) -> int {
   bool info_json = false;
   auto* info_cmd = app.add_subcommand("info", "Show archive info or entry details");
   info_cmd->add_option("file", info_path, "Path to a .NOS archive file")->required();
-  info_cmd->add_option("id", info_entry_ids,
-                       "Entry ID(s) to show details for (optional; without IDs shows archive metadata)")
+  info_cmd
+      ->add_option("id", info_entry_ids,
+                   "Entry ID(s) to show details for (optional; without IDs shows archive metadata)")
       ->expected(-1);
   info_cmd->add_flag("--json", info_json, "Output as JSON");
 

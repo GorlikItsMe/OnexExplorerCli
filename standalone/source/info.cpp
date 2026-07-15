@@ -1,7 +1,7 @@
 #include <onex/archive/nos_archive.h>
 
-#include <cinttypes>
 #include <cctype>
+#include <cinttypes>
 #include <cstdio>
 #include <filesystem>
 #include <iostream>
@@ -134,8 +134,7 @@ namespace onex::cli {
       } else {
         std::printf("  ID  %-10s  %-12s  %-10s  %s\n", "Name", "Type", "Size", "Compressed");
         for (const auto* entry : matched) {
-          std::printf("  %-3u  %-10s  %-12s  %-10" PRIu64 "  %s\n",
-                      entry->id, entry->name.c_str(),
+          std::printf("  %-3u  %-10s  %-12s  %-10" PRIu64 "  %s\n", entry->id, entry->name.c_str(),
                       entry_type_name(entry->type), entry->uncompressed_size,
                       entry->compressed ? "Yes" : "No");
         }
