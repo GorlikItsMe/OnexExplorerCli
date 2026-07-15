@@ -1,7 +1,9 @@
 """Benchmark runner — download, resolve files, run CLI, collect measurements."""
 from __future__ import annotations
 
+import functools
 import os
+import re
 import shlex
 import shutil
 import statistics
@@ -18,19 +20,14 @@ from config import REPO_ROOT, TEMP_DIR
 # ---------------------------------------------------------------------------
 
 
-def _normalize(manifest_path: str) -> str:
-    """Normalise manifest backslashes to forward slashes."""
-    return manifest_path.replace("\\", "/")
-
-
 def _filename(manifest_path: str) -> str:
     """Extract just the filename from a manifest path."""
-    return _normalize(manifest_path).split("/")[-1]
+    return Path(manifest_path).name
 
 
 def _resolve_nos_file(manifest_path: str) -> Path:
     """Find a .NOS file in known data directories."""
-    normalized = _normalize(manifest_path)
+    normalized = manifest_path.replace("\\", "/")
     for p in [
         REPO_ROOT / "temp" / "nostale" / normalized,
         REPO_ROOT / "temp" / "downloads" / normalized,
@@ -71,21 +68,18 @@ def ensure_downloaded(cli: Path, manifest_path: str) -> Path:
 # ---------------------------------------------------------------------------
 
 MEM_PREFIX = "__MEM__"
-
-# Cache GNU time availability so we don't fork every invocation
-_HAS_GNU_TIME: Optional[bool] = None
+_GNU_TIME_WARNED = False
 
 
+@functools.cache
 def _check_gnu_time() -> bool:
-    global _HAS_GNU_TIME
-    if _HAS_GNU_TIME is None:
-        try:
-            r = subprocess.run(["/usr/bin/time", "--version"],
-                               capture_output=True, timeout=5)
-            _HAS_GNU_TIME = b"GNU" in (r.stdout + r.stderr)
-        except (FileNotFoundError, subprocess.TimeoutExpired):
-            _HAS_GNU_TIME = False
-    return _HAS_GNU_TIME
+    """Return True if GNU /usr/bin/time is available."""
+    try:
+        r = subprocess.run(["/usr/bin/time", "--version"],
+                           capture_output=True, timeout=5)
+        return b"GNU" in (r.stdout + r.stderr)
+    except (FileNotFoundError, subprocess.TimeoutExpired):
+        return False
 
 
 def _run_cli(cli: Path, command: str, nos_path: Path,
@@ -95,8 +89,18 @@ def _run_cli(cli: Path, command: str, nos_path: Path,
 
     *command* is a string like "list", "info --json", or "extract".
     It is split on space to build the argument list.
+
+    Note: timing via time.perf_counter() around subprocess.run()
+    includes 1-5 ms of Python overhead per invocation. This is
+    consistent across all operations and doesn't affect relative
+    comparisons.
     """
+    global _GNU_TIME_WARNED
     gnu_avail = _check_gnu_time() if measure_memory else False
+    if measure_memory and not gnu_avail and not _GNU_TIME_WARNED:
+        print("[WARN] GNU /usr/bin/time not found — memory tracking disabled",
+              file=sys.stderr)
+        _GNU_TIME_WARNED = True
 
     args: list[str] = []
     mem_prefix: Optional[str] = None
@@ -133,7 +137,6 @@ def _run_cli(cli: Path, command: str, nos_path: Path,
 
 def _prepare_extract_dir(name: str, temp_dir: Path) -> Path:
     """Create and return the extract output directory for a test name."""
-    import re
     safe = re.sub(r'[^\w.-]+', '_', name).strip("_")
     d = temp_dir / f"extract_{safe}"
     d.mkdir(parents=True, exist_ok=True)

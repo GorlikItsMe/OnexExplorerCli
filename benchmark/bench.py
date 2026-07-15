@@ -50,7 +50,8 @@ def _cli_version(cli: Path) -> str:
         r = subprocess.run([str(cli), "--version"],
                            capture_output=True, text=True, timeout=10)
         return r.stdout.strip() or r.stderr.strip() or "unknown"
-    except Exception:
+    except (FileNotFoundError, subprocess.TimeoutExpired,
+            subprocess.CalledProcessError):
         return "unknown"
 
 
@@ -167,7 +168,7 @@ def main(argv: Optional[List[str]] = None) -> int:
     try:
         cli = _find_cli()
     except FileNotFoundError as e:
-        print(f"❌ {e}", file=sys.stderr)
+        print(f"[ERROR] {e}", file=sys.stderr)
         return 1
 
     info = _platform_info()
@@ -211,17 +212,17 @@ def main(argv: Optional[List[str]] = None) -> int:
             temp_dir=temp_dir,
         )
     except FileNotFoundError as e:
-        print(f"\n❌ {e}", file=sys.stderr)
+        print(f"\n[ERROR] {e}", file=sys.stderr)
         if not args.no_cleanup and temp_dir.exists():
             shutil.rmtree(temp_dir)
         return 1
     except subprocess.TimeoutExpired as e:
-        print(f"\n❌ Timeout: {e}", file=sys.stderr)
+        print(f"\n[ERROR] Timeout: {e}", file=sys.stderr)
         if not args.no_cleanup and temp_dir.exists():
             shutil.rmtree(temp_dir)
         return 1
     except RuntimeError as e:
-        print(f"\n❌ {e}", file=sys.stderr)
+        print(f"\n[ERROR] {e}", file=sys.stderr)
         if not args.no_cleanup and temp_dir.exists():
             shutil.rmtree(temp_dir)
         return 1

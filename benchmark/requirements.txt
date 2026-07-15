@@ -1,0 +1,3 @@
+# Core benchmark — no external runtime dependencies.
+# distro is optional (falls back to platform module) for OS detection.
+distro>=1.0; sys_platform=="linux"
