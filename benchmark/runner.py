@@ -1,4 +1,5 @@
 """Benchmark runner — download, resolve files, run CLI, collect measurements."""
+
 from __future__ import annotations
 
 import functools
@@ -51,15 +52,14 @@ def ensure_downloaded(cli: Path, manifest_path: str) -> Path:
         out = REPO_ROOT / "temp" / "nostale" / "NostaleData"
         out.mkdir(parents=True, exist_ok=True)
         r = subprocess.run(
-            [str(cli), "download", "--build-id", "latest",
-             "-o", str(out), name],
-            capture_output=True, text=True, timeout=300,
+            [str(cli), "download", "--build-id", "latest", "-o", str(out), name],
+            capture_output=True,
+            text=True,
+            timeout=300,
         )
         if r.returncode != 0:
             msg = r.stderr.strip() or r.stdout.strip() or "unknown error"
-            raise RuntimeError(
-                f"download failed for {manifest_path}: {msg}"
-            )
+            raise RuntimeError(f"download failed for {manifest_path}: {msg}")
         return _resolve_nos_file(manifest_path)
 
 
@@ -90,8 +90,9 @@ def find_cli() -> Path:
 def cli_version(cli: Path) -> str:
     """Return the CLI version string."""
     try:
-        r = subprocess.run([str(cli), "--version"],
-                           capture_output=True, text=True, timeout=10)
+        r = subprocess.run(
+            [str(cli), "--version"], capture_output=True, text=True, timeout=10
+        )
         return r.stdout.strip() or r.stderr.strip() or "unknown"
     except (FileNotFoundError, subprocess.TimeoutExpired):
         return "unknown"
@@ -108,16 +109,21 @@ MEM_PREFIX = "__MEM__"
 def _check_gnu_time() -> bool:
     """Return True if GNU /usr/bin/time is available."""
     try:
-        r = subprocess.run(["/usr/bin/time", "--version"],
-                           capture_output=True, timeout=5)
+        r = subprocess.run(
+            ["/usr/bin/time", "--version"], capture_output=True, timeout=5
+        )
         return b"GNU" in (r.stdout + r.stderr)
     except (FileNotFoundError, subprocess.TimeoutExpired):
         return False
 
 
-def _build_cli_args(cli: Path, command: str, nos_path: Path,
-                    output_dir: Optional[Path] = None,
-                    gnu_avail: bool = False) -> list[str]:
+def _build_cli_args(
+    cli: Path,
+    command: str,
+    nos_path: Path,
+    output_dir: Optional[Path] = None,
+    gnu_avail: bool = False,
+) -> list[str]:
     """Build the argument list for a CLI invocation."""
     args: list[str] = []
     if gnu_avail:
@@ -136,16 +142,20 @@ def _parse_memory_kb(stderr: str, prefix: str) -> Optional[int]:
     """Parse peak RSS (KB) from GNU time stderr."""
     for line in stderr.splitlines():
         if line.startswith(prefix):
-            digits = line[len(prefix):].strip()
+            digits = line[len(prefix) :].strip()
             if digits.isdigit():
                 return int(digits)
             break
     return None
 
 
-def _run_cli(cli: Path, command: str, nos_path: Path,
-             output_dir: Optional[Path] = None,
-             gnu_avail: bool = False) -> Tuple[subprocess.CompletedProcess, Optional[int]]:
+def _run_cli(
+    cli: Path,
+    command: str,
+    nos_path: Path,
+    output_dir: Optional[Path] = None,
+    gnu_avail: bool = False,
+) -> Tuple[subprocess.CompletedProcess, Optional[int]]:
     """Run a single CLI operation.
 
     *command* is a string like "list", "info --json", or "extract".
@@ -171,7 +181,7 @@ def _run_cli(cli: Path, command: str, nos_path: Path,
 
 def _prepare_extract_dir(name: str, temp_dir: Path) -> Path:
     """Create (or recreate) a clean extract output directory."""
-    safe = re.sub(r'[^\w.-]+', '_', name).strip("_")
+    safe = re.sub(r"[^\w.-]+", "_", name).strip("_")
     d = temp_dir / f"extract_{safe}"
     shutil.rmtree(d, ignore_errors=True)
     d.mkdir(parents=True, exist_ok=True)
@@ -197,11 +207,9 @@ def _compute_stats(measurements: List[Tuple[float, Optional[int], bool]]) -> dic
     }
 
 
-def run_benchmark(cli: Path,
-                  tests: List[BenchTest],
-                  iterations: int,
-                  warmup: int,
-                  temp_dir: Path) -> Dict[str, dict]:
+def run_benchmark(
+    cli: Path, tests: List[BenchTest], iterations: int, warmup: int, temp_dir: Path
+) -> Dict[str, dict]:
     """Run the full benchmark suite.
 
     Returns a nested dict:
@@ -218,8 +226,11 @@ def run_benchmark(cli: Path,
     # never needs to call _check_gnu_time() itself.
     can_measure = _check_gnu_time()
     if not can_measure:
-        print("[WARN] GNU /usr/bin/time not found — memory tracking disabled",
-              file=sys.stderr)
+        print(
+            "[WARN] GNU /usr/bin/time not found — memory tracking disabled\n"
+            "       Install the 'time' package via your package manager",
+            file=sys.stderr,
+        )
 
     results: Dict[str, dict] = {}
 
@@ -236,7 +247,9 @@ def run_benchmark(cli: Path,
             print(f"  · {command}", end="", file=sys.stderr, flush=True)
 
             measurements: List[Tuple[float, Optional[int], bool]] = []
-            out_dir = _prepare_extract_dir(name, temp_dir) if command == "extract" else None
+            out_dir = (
+                _prepare_extract_dir(name, temp_dir) if command == "extract" else None
+            )
 
             # Warmup (no memory measurement)
             for _ in range(warmup):
@@ -245,17 +258,21 @@ def run_benchmark(cli: Path,
             # Measured runs
             for _ in range(iterations):
                 start = time.perf_counter()
-                proc, mem = _run_cli(cli, command, nos_path, out_dir,
-                                     gnu_avail=can_measure)
+                proc, mem = _run_cli(
+                    cli, command, nos_path, out_dir, gnu_avail=can_measure
+                )
                 elapsed = (time.perf_counter() - start) * 1000.0
                 measurements.append((elapsed, mem, proc.returncode == 0))
 
             stats = _compute_stats(measurements)
             entry["operations"][command] = stats
-            print(f"  min={stats['min_ms']:.1f}ms  "
-                  f"median={stats['median_ms']:.1f}ms  "
-                  f"max={stats['max_ms']:.1f}ms",
-                  file=sys.stderr, flush=True)
+            print(
+                f"  min={stats['min_ms']:.1f}ms  "
+                f"median={stats['median_ms']:.1f}ms  "
+                f"max={stats['max_ms']:.1f}ms",
+                file=sys.stderr,
+                flush=True,
+            )
 
         results[name] = entry
 

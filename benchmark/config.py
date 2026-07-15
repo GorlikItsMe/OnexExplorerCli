@@ -48,8 +48,8 @@ BENCH_TESTS: List[BenchTest] = [
     ("32GBS",       "NostaleData/NS4BbData.NOS",    ["list", "info --json", "extract"]),
     ("NT Data",     "NostaleData/NStpData01.NOS",   ["list", "info --json", "extract"]),
     ("CCINF V1.20", "NostaleData/NSmnData.NOS",     ["list", "info --json", "extract"]),
-    ("Text",        "NostaleData/NSgtdData.NOS",     ["list", "info --json", "extract"]),
-    ("Map",         "NostaleData/NSmpData04.NOS",   ["list", "info --json", "extract"]),
+    ("Text",        "NostaleData/NSgtdData.NOS",    ["list", "info --json", "extract"]),
+    ("NT Data",     "NostaleData/NSmpData04.NOS",   ["list", "info --json", "extract"]),
 ]
 
 # ---------------------------------------------------------------------------

@@ -169,9 +169,7 @@ def main(argv: Optional[list[str]] = None) -> int:
         print()
         print("  OnexExplorerCli Benchmark")
         print(f"  Binary: {cli}")
-        print(
-            f"  Files:  {len(BENCH_TESTS)} ({', '.join(n for n, _, _ in BENCH_TESTS)})"
-        )
+        print(f"  Files:  {len(BENCH_TESTS)}")
         print(f"  Ops:    {', '.join(all_commands)}")
         print(
             f"  Runs:   {args.iterations} iterations"
