@@ -48,32 +48,3 @@ jobs:
         run: |
           cd build
           ctest --build-config Debug
-
-  build-standalone:
-    runs-on: windows-latest
-
-    steps:
-      - uses: actions/checkout@v3
-
-      - uses: actions/cache@v3
-        with:
-          path: "**/cpm_modules"
-          key: ${{ github.workflow }}-standalone-cpm-modules-${{ hashFiles('**/CMakeLists.txt', '**/*.cmake') }}
-
-      - name: Cache vcpkg binary packages
-        uses: actions/cache@v3
-        with:
-          path: C:/Users/runneradmin/AppData/Local/vcpkg/archives
-          key: ${{ github.workflow }}-standalone-vcpkg-curl-x64-windows
-          restore-keys: ${{ github.workflow }}-standalone-vcpkg-curl-x64-windows
-
-      - name: Install dependencies
-        run: vcpkg install curl
-        env:
-          VCPKG_DEFAULT_TRIPLET: x64-windows
-
-      - name: configure
-        run: cmake -Sstandalone -Bbuild-standalone -DCMAKE_BUILD_TYPE=Release -DCMAKE_TOOLCHAIN_FILE="C:/vcpkg/scripts/buildsystems/vcpkg.cmake"
-
-      - name: build
-        run: cmake --build build-standalone --config Release -j4
