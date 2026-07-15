@@ -249,8 +249,8 @@ TEST_CASE(
 // Text archive integration – real file decode
 // ---------------------------------------------------------------------------
 
-TEST_CASE("NosArchive::read_entry on NScliData.NOS first entry contains 'Info'") {
-  auto path = ensure_fixture("NostaleData\\NScliData.NOS");
+TEST_CASE("NosArchive::read_entry on NScliData_UK.NOS first entry contains 'Info'") {
+  auto path = ensure_fixture("NostaleData\\NScliData_UK.NOS");
 
   auto result = onex::archive::NosArchive::open(path);
   REQUIRE(result);
