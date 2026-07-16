@@ -37,11 +37,14 @@ namespace onex::archive {
   private:
     NosArchive() = default;
 
+    auto release() -> void;
+
     Header header_{};
     std::string filepath_;
     void* map_addr_ = nullptr;
     size_t map_size_ = 0;
     std::vector<EntryInfo> entries_;
+    std::vector<uint8_t> buf_;
   };
 
 }  // namespace onex::archive
