@@ -2,6 +2,7 @@
 
 #include <cstddef>
 #include <functional>
+#include <vector>
 
 namespace onex::util {
 
@@ -10,7 +11,7 @@ namespace onex::util {
   /// distributes work via an atomic counter, waits for completion, then joins.
   ///
   /// @warning This pool is @b not safe for concurrent calls from multiple
-  /// threads — @c parallel_for serialises internally only for exception safety
+  /// threads — parallel_for serialises internally only for exception safety
   /// (joining already-spawned threads if creation fails), but concurrent
   /// invocations from different caller threads would oversubscribe cores and
   /// produce undefined behaviour for the shared @c fn arguments.
@@ -30,15 +31,17 @@ namespace onex::util {
     /// Invoke @p fn(i) for i in [0, count) in parallel.
     ///
     /// @p fn must be callable as @c bool(size_t) and return @c true on success,
-    /// @c false on error.  Exceptions thrown by @p fn are caught and counted as
+    /// @c false on error.  Exceptions thrown by @p fn are caught and returned as
     /// errors — they never propagate out of @c parallel_for.
     ///
-    /// @return The total number of calls that returned @c false or threw.
+    /// @return A vector of indices for which @p fn returned @c false or threw.
+    ///         Empty vector means all calls succeeded.
     ///
     /// @note This method blocks until all work is done and threads are joined.
     /// If thread creation fails partway through, already-spawned threads are
     /// joined before the exception propagates (no @c std::terminate).
-    [[nodiscard]] size_t parallel_for(size_t count, const std::function<bool(size_t)>& fn);
+    [[nodiscard]] std::vector<size_t> parallel_for(size_t count,
+                                                   const std::function<bool(size_t)>& fn);
 
     /// Number of worker threads in this pool.
     [[nodiscard]] size_t num_threads() const noexcept { return num_threads_; }

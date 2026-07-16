@@ -2,6 +2,7 @@
 
 #include <atomic>
 #include <exception>
+#include <mutex>
 #include <thread>
 #include <vector>
 
@@ -11,20 +12,19 @@ namespace onex::util {
     if (num_threads == 0) {
       num_threads = std::thread::hardware_concurrency();
     }
-    if (num_threads == 0) {
-      num_threads = 1;
-    }
-    num_threads_ = num_threads;
+    num_threads_ = (num_threads > 0) ? num_threads : 1;
   }
 
-  size_t ThreadPool::parallel_for(size_t count, const std::function<bool(size_t)>& fn) {
+  std::vector<size_t> ThreadPool::parallel_for(size_t count,
+                                               const std::function<bool(size_t)>& fn) {
+    std::vector<size_t> failed;
     if (count == 0) {
-      return 0;
+      return failed;
     }
 
     const size_t n_workers = std::min(count, num_threads_);
     std::atomic<size_t> next{0};
-    std::atomic<size_t> errors{0};
+    std::mutex error_mutex;
 
     auto worker = [&]() {
       while (true) {
@@ -32,14 +32,17 @@ namespace onex::util {
         if (idx >= count) {
           break;
         }
-        // If the callback throws, treat it as an error rather than letting
-        // the exception escape into std::thread which would call terminate().
+
+        bool ok = false;
         try {
-          if (!fn(idx)) {
-            errors.fetch_add(1, std::memory_order_relaxed);
-          }
+          ok = fn(idx);
         } catch (...) {
-          errors.fetch_add(1, std::memory_order_relaxed);
+          ok = false;
+        }
+
+        if (!ok) {
+          std::lock_guard lk(error_mutex);
+          failed.push_back(idx);
         }
       }
     };
@@ -68,9 +71,8 @@ namespace onex::util {
     for (auto& w : workers) {
       w.join();
     }
-    // workers is empty after join (moved-from), so the guard joins nothing.
 
-    return errors.load();
+    return failed;
   }
 
 }  // namespace onex::util

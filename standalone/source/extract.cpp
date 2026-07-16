@@ -80,7 +80,7 @@ namespace onex::cli {
     std::atomic<bool> worker_error{false};
     std::mutex cout_mutex;
 
-    [[maybe_unused]] auto _errors = pool.parallel_for(decoded.size(), [&](size_t idx) -> bool {
+    auto failed_indices = pool.parallel_for(decoded.size(), [&](size_t idx) -> bool {
       const auto& de = decoded[idx];
       const auto& entry = *de.info;
 
@@ -135,6 +135,10 @@ namespace onex::cli {
 
       return true;
     });
+
+    if (!failed_indices.empty()) {
+      worker_error = true;
+    }
 
     return (had_error || worker_error) ? 1 : 0;
   }
