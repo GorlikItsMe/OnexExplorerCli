@@ -138,6 +138,8 @@ namespace onex::cli {
 
     if (!failed_indices.empty()) {
       worker_error = true;
+      std::cerr << "OnexExplorerCli: error: " << failed_indices.size() << " of " << decoded.size()
+                << " entries failed to extract\n";
     }
 
     return (had_error || worker_error) ? 1 : 0;
