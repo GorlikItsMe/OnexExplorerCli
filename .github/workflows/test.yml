@@ -1,0 +1,74 @@
+name: Test
+
+on:
+  push:
+    branches:
+      - master
+      - main
+  pull_request:
+    branches:
+      - master
+      - main
+
+env:
+  CTEST_OUTPUT_ON_FAILURE: 1
+  CPM_SOURCE_CACHE: ${{ github.workspace }}/cpm_modules
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        include:
+          - os: ubuntu-latest
+            deps: sudo apt-get update && sudo apt-get install -y libcurl4-openssl-dev
+            cmake_toolchain: ""
+
+          - os: macos-latest
+            deps: ""
+            cmake_toolchain: ""
+
+          - os: windows-latest
+            deps: vcpkg install curl
+            cmake_toolchain: -DCMAKE_TOOLCHAIN_FILE="C:/vcpkg/scripts/buildsystems/vcpkg.cmake"
+            vcpkg_triplet: x64-windows
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - uses: actions/cache@v3
+        with:
+          path: "**/cpm_modules"
+          key: ${{ github.workflow }}-cpm-${{ matrix.os }}-${{ hashFiles('**/CMakeLists.txt', '**/*.cmake') }}
+
+      - name: Cache vcpkg
+        if: matrix.vcpkg_triplet != ''
+        uses: actions/cache@v3
+        with:
+          path: C:/Users/runneradmin/AppData/Local/vcpkg/archives
+          key: ${{ github.workflow }}-vcpkg-curl-x64-windows
+          restore-keys: ${{ github.workflow }}-vcpkg-curl-x64-windows
+
+      - name: Install dependencies
+        if: matrix.deps != ''
+        run: ${{ matrix.deps }}
+        env:
+          VCPKG_DEFAULT_TRIPLET: ${{ matrix.vcpkg_triplet }}
+
+      - name: configure
+        run: cmake -Stest -Bbuild -DCMAKE_BUILD_TYPE=Debug ${{ matrix.cmake_toolchain }}
+
+      - name: build
+        run: cmake --build build --config Debug -j4
+
+      - name: test
+        run: |
+          cd build
+          ctest --build-config Debug
+
+      - name: configure standalone
+        run: cmake -Sstandalone -Bbuild-standalone -DCMAKE_BUILD_TYPE=Release ${{ matrix.cmake_toolchain }}
+
+      - name: build standalone
+        run: cmake --build build-standalone --config Release -j4
