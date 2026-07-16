@@ -30,6 +30,7 @@ namespace onex::cli {
 
     // --- Phase 1: determine which entries to extract ---
     std::vector<size_t> indices;
+    bool had_error = false;
     if (entry_ids.empty()) {
       indices.reserve(entries.size());
       for (size_t i = 0; i < entries.size(); ++i) indices.push_back(i);
@@ -45,6 +46,7 @@ namespace onex::cli {
         }
         if (!found) {
           std::cerr << "OnexExplorerCli: error: entry " << id << " not found\n";
+          had_error = true;
         }
       }
       if (indices.empty()) return 1;
@@ -58,7 +60,6 @@ namespace onex::cli {
 
     std::vector<DecodedEntry> decoded;
     decoded.reserve(indices.size());
-    bool had_error = false;
 
     for (auto idx : indices) {
       auto& entry = entries[idx];
