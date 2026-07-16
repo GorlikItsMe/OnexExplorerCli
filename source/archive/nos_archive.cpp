@@ -100,6 +100,7 @@ namespace onex::archive {
     ::close(fd);
 
     ::posix_madvise(addr, size, POSIX_MADV_WILLNEED);
+    ::posix_madvise(addr, size, POSIX_MADV_SEQUENTIAL);
 
     map_addr_ = addr;
     map_size_ = size;

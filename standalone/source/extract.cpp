@@ -2,7 +2,6 @@
 #include <onex/archive/nos_archive.h>
 #include <onex/util/thread_pool.h>
 
-#include <atomic>
 #include <cstdint>
 #include <filesystem>
 #include <fstream>
@@ -52,37 +51,23 @@ namespace onex::cli {
       if (indices.empty()) return 1;
     }
 
-    // --- Phase 2: read + decompress all target entries (fast, sequential I/O) ---
-    struct DecodedEntry {
-      const onex::archive::EntryInfo* info;
-      std::vector<uint8_t> data;
-    };
-
-    std::vector<DecodedEntry> decoded;
-    decoded.reserve(indices.size());
-
-    for (auto idx : indices) {
-      auto& entry = entries[idx];
-      auto data = archive.read_entry(idx);
-      if (!data) {
-        std::cerr << "OnexExplorerCli: error: entry " << entry.id << " (" << entry.name
-                  << "): " << error_text(data.error) << "\n";
-        had_error = true;
-        continue;
-      }
-      decoded.push_back({&entry, std::move(data.value)});
-    }
-
-    if (decoded.empty()) return had_error ? 1 : 0;
-
-    // --- Phase 3: PNG encode + write in parallel ---
+    // --- Phase 2: read, decompress, encode, and write all entries in parallel ---
+    // With mmap-backed archive, read_entry() is thread-safe so all work
+    // (decompression, PNG encoding, file I/O) runs in the thread pool.
     onex::util::ThreadPool pool;
-    std::atomic<bool> worker_error{false};
     std::mutex cout_mutex;
 
-    auto failed_indices = pool.parallel_for(decoded.size(), [&](size_t idx) -> bool {
-      const auto& de = decoded[idx];
-      const auto& entry = *de.info;
+    auto failed_indices = pool.parallel_for(indices.size(), [&](size_t i) -> bool {
+      auto idx = indices[i];
+      const auto& entry = entries[idx];
+
+      auto data = archive.read_entry(idx);
+      if (!data) {
+        std::lock_guard lk(cout_mutex);
+        std::cerr << "OnexExplorerCli: error: entry " << entry.id << " (" << entry.name
+                  << "): " << error_text(data.error) << "\n";
+        return false;
+      }
 
       const bool is_image = entry.type == onex::archive::EntryType::Texture
                             || entry.type == onex::archive::EntryType::Icon
@@ -90,12 +75,12 @@ namespace onex::cli {
                             || entry.type == onex::archive::EntryType::TileGrid;
 
       auto out_name = entry.name;
-      const uint8_t* write_data = de.data.data();
-      auto write_size = de.data.size();
+      const uint8_t* write_data = data.value.data();
+      auto write_size = data.value.size();
       std::vector<uint8_t> png_bytes;
 
       if (is_image) {
-        auto png = onex::archive::decode_entry_to_png(de.data, entry.type);
+        auto png = onex::archive::decode_entry_to_png(data.value, entry.type);
         if (png) {
           png_bytes = std::move(png.value);
           write_data = png_bytes.data();
@@ -113,7 +98,6 @@ namespace onex::cli {
           std::lock_guard lk(cout_mutex);
           std::cerr << "OnexExplorerCli: error: cannot create output directory \""
                     << out_path.parent_path() << "\"\n";
-          worker_error = true;
           return false;
         }
       }
@@ -122,7 +106,6 @@ namespace onex::cli {
       if (!out) {
         std::lock_guard lk(cout_mutex);
         std::cerr << "OnexExplorerCli: error: cannot write " << out_path << "\n";
-        worker_error = true;
         return false;
       }
       out.write(reinterpret_cast<const char*>(write_data),
@@ -137,12 +120,12 @@ namespace onex::cli {
     });
 
     if (!failed_indices.empty()) {
-      worker_error = true;
-      std::cerr << "OnexExplorerCli: error: " << failed_indices.size() << " of " << decoded.size()
+      std::cerr << "OnexExplorerCli: error: " << failed_indices.size() << " of " << indices.size()
                 << " entries failed to extract\n";
+      return 1;
     }
 
-    return (had_error || worker_error) ? 1 : 0;
+    return had_error ? 1 : 0;
   }
 
 }  // namespace onex::cli
