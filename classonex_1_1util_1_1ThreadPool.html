@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>onex/core/ directory | OnexExplorer</title>
+  <title>onex::util::ThreadPool class | OnexExplorer</title>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Source+Sans+Pro:400,400i,600,600i%7CSource+Code+Pro:400,400i,600" />
   <link rel="stylesheet" href="m-dark+documentation.compiled.css" />
   <link rel="icon" href="favicon-dark.png" type="image/png" />
@@ -52,26 +52,67 @@
     <div class="m-row">
       <div class="m-col-l-10 m-push-l-1">
         <h1>
-          <span class="m-breadcrumb"><a href="dir_82f8db40a875a0d04155bc42b28473f0.html">onex</a>/</span>core<span class="m-breadcrumb">/</span> <span class="m-thin">directory</span>
+          <span class="m-breadcrumb"><a href="namespaceonex.html">onex</a>::<wbr/></span><span class="m-breadcrumb"><a href="namespaceonex_1_1util.html">util</a>::<wbr/></span>ThreadPool <span class="m-thin">class</span>
         </h1>
-        <p><span></span></p>
         <nav class="m-block m-default">
           <h3>Contents</h3>
           <ul>
             <li>
               Reference
               <ul>
-                <li><a href="#files">Files</a></li>
+                <li><a href="#typeless-methods">Constructors, destructors, conversion operators</a></li>
+                <li><a href="#pub-methods">Public functions</a></li>
               </ul>
             </li>
           </ul>
         </nav>
-        <section id="files">
-          <h2><a href="#files">Files</a></h2>
+<p>A simple thread pool that distributes independent work items across a fixed set of worker threads. Each call to <code>parallel_for</code> creates threads, distributes work via an atomic counter, waits for completion, then joins.</p><aside class="m-note m-danger"><h4>Warning</h4><p>This pool is <strong>not</strong> safe for concurrent calls from multiple threads — parallel_for serialises internally only for exception safety (joining already-spawned threads if creation fails), but concurrent invocations from different caller threads would oversubscribe cores and produce undefined behaviour for the shared <code>fn</code> arguments.</p></aside>
+        <section id="typeless-methods">
+          <h2><a href="#typeless-methods">Constructors, destructors, conversion operators</a></h2>
           <dl class="m-doc">
-            <dt>file <a href="error_8h.html" class="m-doc">error.h</a></dt>
-            <dd><span></span></dd>
+            <dt>
+              <span class="m-doc-wrap-bumper"><a href="#afd048fc788039f601f5f0a56f1932e3a" class="m-doc">ThreadPool</a>(</span><span class="m-doc-wrap">size_t num_threads = 0) <span class="m-label m-flat m-info">explicit</span> </span>
+            </dt>
+            <dd></dd>
           </dl>
+        </section>
+        <section id="pub-methods">
+          <h2><a href="#pub-methods">Public functions</a></h2>
+          <dl class="m-doc">
+            <dt>
+              <span class="m-doc-wrap-bumper">auto <a href="#ad8621fc038fb98d44aa678c597511132" class="m-doc">parallel_for</a>(</span><span class="m-doc-wrap">size_t count,
+              const std::function&lt;bool(size_t)&gt;&amp; fn) -&gt; std::vector&lt;size_t&gt;</span>
+            </dt>
+            <dd></dd>
+            <dt id="a74de7ceabc562fdd24eae32e612c3108">
+              <span class="m-doc-wrap-bumper">auto <a href="#a74de7ceabc562fdd24eae32e612c3108" class="m-doc-self">num_threads</a>(</span><span class="m-doc-wrap">) const -&gt; size_t <span class="m-label m-flat m-success">noexcept</span></span>
+            </dt>
+            <dd>Number of worker threads in this pool.</dd>
+          </dl>
+        </section>
+        <section>
+          <h2>Function documentation</h2>
+          <section class="m-doc-details" id="afd048fc788039f601f5f0a56f1932e3a"><div>
+            <h3>
+              <span class="m-doc-wrap-bumper"> onex::<wbr />util::<wbr />ThreadPool::<wbr /></span><span class="m-doc-wrap"><span class="m-doc-wrap-bumper"><a href="#afd048fc788039f601f5f0a56f1932e3a" class="m-doc-self">ThreadPool</a>(</span><span class="m-doc-wrap">size_t num_threads = 0) <span class="m-label m-info">explicit</span> </span></span>
+            </h3>
+<p>Construct a pool with <code>num_threads</code> worker threads. If <code>num_threads</code> == 0, uses std::thread::hardware_concurrency().</p>
+          </div></section>
+          <section class="m-doc-details" id="ad8621fc038fb98d44aa678c597511132"><div>
+            <h3>
+              <span class="m-doc-wrap-bumper">std::vector&lt;size_t&gt; onex::<wbr />util::<wbr />ThreadPool::<wbr /></span><span class="m-doc-wrap"><span class="m-doc-wrap-bumper"><a href="#ad8621fc038fb98d44aa678c597511132" class="m-doc-self">parallel_for</a>(</span><span class="m-doc-wrap">size_t count,
+              const std::function&lt;bool(size_t)&gt;&amp; fn)</span></span>
+            </h3>
+            <table class="m-table m-fullwidth m-flat">
+              <tfoot>
+                <tr>
+                  <th style="width: 1%">Returns</th>
+                  <td>A vector of indices for which <code>fn</code> returned <code>false</code> or threw. Empty vector means all calls succeeded.</td>
+                </tr>
+              </tfoot>
+            </table>
+<p>Invoke <code>fn(i)</code> for i in [0, count) in parallel.</p><p><code>fn</code> must be callable as <code>bool(size_t)</code> and return <code>true</code> on success, <code>false</code> on error. Exceptions thrown by <code>fn</code> are caught and returned as errors — they never propagate out of <code>parallel_for</code>.</p><aside class="m-note m-info"><h4>Note</h4><p>This method blocks until all work is done and threads are joined. If thread creation fails partway through, already-spawned threads are joined before the exception propagates (no <code>std::terminate</code>).</p></aside>
+          </div></section>
         </section>
       </div>
     </div>

@@ -54,14 +54,13 @@
         <h1>
           onex <span class="m-thin">namespace</span>
         </h1>
-        <p><span></span></p>
+        <p>Fundamental type definitions and error handling for the onex library.</p>
         <nav class="m-block m-default">
           <h3>Contents</h3>
           <ul>
             <li>
               Reference
               <ul>
-                <li><a href="#namespaces">Namespaces</a></li>
                 <li><a href="#nested-classes">Classes</a></li>
                 <li><a href="#enum-members">Enums</a></li>
                 <li><a href="#typedef-members">Typedefs</a></li>
@@ -69,15 +68,6 @@
             </li>
           </ul>
         </nav>
-        <section id="namespaces">
-          <h2><a href="#namespaces">Namespaces</a></h2>
-          <dl class="m-doc">
-            <dt>namespace <a href="namespaceonex_1_1archive.html" class="m-doc">archive</a></dt>
-            <dd><span></span></dd>
-            <dt>namespace <a href="namespaceonex_1_1downloader.html" class="m-doc">downloader</a></dt>
-            <dd><span></span></dd>
-          </dl>
-        </section>
         <section id="nested-classes">
           <h2><a href="#nested-classes">Classes</a></h2>
           <dl class="m-doc">
@@ -85,7 +75,7 @@
               <div class="m-doc-template">template&lt;typename T&gt;</div>
               struct <a href="structonex_1_1Result.html" class="m-doc">Result</a>
             </dt>
-            <dd><span></span></dd>
+            <dd></dd>
           </dl>
         </section>
         <section id="enum-members">
@@ -105,16 +95,16 @@
               <a href="#a05c0920c83a313044fe3cde1b74ddcbca89f9f5ef642ef2ee3c7c01baa948d8dd" class="m-doc">kIoError</a>,
               <a href="#a05c0920c83a313044fe3cde1b74ddcbcab27d53d170bc6b3a21f586a562a99578" class="m-doc">kNetworkError</a> }</span>
             </dt>
-            <dd><span></span></dd>
+            <dd><a href="namespaceonex.html#a05c0920c83a313044fe3cde1b74ddcbc" class="m-doc">Error</a> codes returned by most library operations.</dd>
           </dl>
         </section>
         <section id="typedef-members">
           <h2><a href="#typedef-members">Typedefs</a></h2>
           <dl class="m-doc">
-            <dt>
-              using <a href="#ad73e3b271b408f0d42d143d81b8d408b" class="m-doc">byte</a> = std::uint8_t
+            <dt id="ad73e3b271b408f0d42d143d81b8d408b">
+              using <a href="#ad73e3b271b408f0d42d143d81b8d408b" class="m-doc-self">byte</a> = std::uint8_t
             </dt>
-            <dd><span></span></dd>
+            <dd>Raw byte type used throughout the library.</dd>
           </dl>
         </section>
         <section>
@@ -122,19 +112,85 @@
           <section class="m-doc-details" id="a05c0920c83a313044fe3cde1b74ddcbc"><div>
             <h3>
               enum class onex::<wbr /><a href="#a05c0920c83a313044fe3cde1b74ddcbc" class="m-doc-self">Error</a>
-              <div class="m-doc-include m-code m-inverted m-text-right"><span class="cp">#include</span> <a class="cpf" href="error_8h.html">&lt;onex/core/error.h&gt;</a></div>
             </h3>
-            <p><span></span></p>
-          </div></section>
-        </section>
-        <section>
-          <h2>Typedef documentation</h2>
-          <section class="m-doc-details" id="ad73e3b271b408f0d42d143d81b8d408b"><div>
-            <h3>
-              using onex::<wbr /><a href="#ad73e3b271b408f0d42d143d81b8d408b" class="m-doc-self">byte</a> = std::uint8_t
-              <div class="m-doc-include m-code m-inverted m-text-right"><span class="cp">#include</span> <a class="cpf" href="error_8h.html">&lt;onex/core/error.h&gt;</a></div>
-            </h3>
-            <p><span></span></p>
+            <p><a href="namespaceonex.html#a05c0920c83a313044fe3cde1b74ddcbc" class="m-doc">Error</a> codes returned by most library operations.</p>
+            <table class="m-table m-fullwidth m-flat m-doc">
+              <thead><tr><th style="width: 1%">Enumerators</th><th></th></tr></thead>
+              <tbody>
+                <tr>
+                  <td><a href="#a05c0920c83a313044fe3cde1b74ddcbca35c3ace1970663a16e5c65baa5941b13" class="m-doc-self" id="a05c0920c83a313044fe3cde1b74ddcbca35c3ace1970663a16e5c65baa5941b13">kNone</a></td>
+                  <td>
+                  <p>No error; the operation succeeded.</p>
+                  </td>
+                </tr>
+                <tr>
+                  <td><a href="#a05c0920c83a313044fe3cde1b74ddcbcabba93d9ebbc6d0ca14ddafafca070aac" class="m-doc-self" id="a05c0920c83a313044fe3cde1b74ddcbcabba93d9ebbc6d0ca14ddafafca070aac">kInvalidHeader</a></td>
+                  <td>
+                  <p>The archive header is missing or malformed.</p>
+                  </td>
+                </tr>
+                <tr>
+                  <td><a href="#a05c0920c83a313044fe3cde1b74ddcbca304d05f58828950f98914e0fb73607ba" class="m-doc-self" id="a05c0920c83a313044fe3cde1b74ddcbca304d05f58828950f98914e0fb73607ba">kInvalidFormat</a></td>
+                  <td>
+                  <p>The archive format is not recognised.</p>
+                  </td>
+                </tr>
+                <tr>
+                  <td><a href="#a05c0920c83a313044fe3cde1b74ddcbcaea70572e6d73d44f366809bf49778884" class="m-doc-self" id="a05c0920c83a313044fe3cde1b74ddcbcaea70572e6d73d44f366809bf49778884">kCorruptArchive</a></td>
+                  <td>
+                  <p>The archive data is corrupt or truncated.</p>
+                  </td>
+                </tr>
+                <tr>
+                  <td><a href="#a05c0920c83a313044fe3cde1b74ddcbcabf3e5688c433685879e0fe71c2dcfbb1" class="m-doc-self" id="a05c0920c83a313044fe3cde1b74ddcbcabf3e5688c433685879e0fe71c2dcfbb1">kEntryNotFound</a></td>
+                  <td>
+                  <p>A requested entry was not found in the archive.</p>
+                  </td>
+                </tr>
+                <tr>
+                  <td><a href="#a05c0920c83a313044fe3cde1b74ddcbca2955118f85d86943e0978934c189818c" class="m-doc-self" id="a05c0920c83a313044fe3cde1b74ddcbca2955118f85d86943e0978934c189818c">kAmbiguousMatch</a></td>
+                  <td>
+                  <p>More than one entry matched the lookup criteria.</p>
+                  </td>
+                </tr>
+                <tr>
+                  <td><a href="#a05c0920c83a313044fe3cde1b74ddcbcaaf4c371b3f2de341026780999e575031" class="m-doc-self" id="a05c0920c83a313044fe3cde1b74ddcbcaaf4c371b3f2de341026780999e575031">kDecompressFailed</a></td>
+                  <td>
+                  <p>Decompression of entry data failed.</p>
+                  </td>
+                </tr>
+                <tr>
+                  <td><a href="#a05c0920c83a313044fe3cde1b74ddcbca82d7962f1e26166feb76d81fd063db03" class="m-doc-self" id="a05c0920c83a313044fe3cde1b74ddcbca82d7962f1e26166feb76d81fd063db03">kCompressFailed</a></td>
+                  <td>
+                  <p>Compression of entry data failed.</p>
+                  </td>
+                </tr>
+                <tr>
+                  <td><a href="#a05c0920c83a313044fe3cde1b74ddcbca3a62d594c4725a38e29490fa75b0a0be" class="m-doc-self" id="a05c0920c83a313044fe3cde1b74ddcbca3a62d594c4725a38e29490fa75b0a0be">kFileNotFound</a></td>
+                  <td>
+                  <p>The specified file does not exist.</p>
+                  </td>
+                </tr>
+                <tr>
+                  <td><a href="#a05c0920c83a313044fe3cde1b74ddcbca58d3b11e0fadcadf0990c58e19a8be7e" class="m-doc-self" id="a05c0920c83a313044fe3cde1b74ddcbca58d3b11e0fadcadf0990c58e19a8be7e">kReadError</a></td>
+                  <td>
+                  <p>An I/O read operation failed.</p>
+                  </td>
+                </tr>
+                <tr>
+                  <td><a href="#a05c0920c83a313044fe3cde1b74ddcbca89f9f5ef642ef2ee3c7c01baa948d8dd" class="m-doc-self" id="a05c0920c83a313044fe3cde1b74ddcbca89f9f5ef642ef2ee3c7c01baa948d8dd">kIoError</a></td>
+                  <td>
+                  <p>A general I/O error occurred.</p>
+                  </td>
+                </tr>
+                <tr>
+                  <td><a href="#a05c0920c83a313044fe3cde1b74ddcbcab27d53d170bc6b3a21f586a562a99578" class="m-doc-self" id="a05c0920c83a313044fe3cde1b74ddcbcab27d53d170bc6b3a21f586a562a99578">kNetworkError</a></td>
+                  <td>
+                  <p>A network request failed.</p>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
           </div></section>
         </section>
       </div>

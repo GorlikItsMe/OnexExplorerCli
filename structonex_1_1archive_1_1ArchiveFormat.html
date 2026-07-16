@@ -53,9 +53,7 @@
       <div class="m-col-l-10 m-push-l-1">
         <h1>
           <span class="m-breadcrumb"><a href="namespaceonex.html">onex</a>::<wbr/></span><span class="m-breadcrumb"><a href="namespaceonex_1_1archive.html">archive</a>::<wbr/></span>ArchiveFormat <span class="m-thin">struct</span>
-          <div class="m-doc-include m-code m-inverted m-text-right"><span class="cp">#include</span> <a class="cpf" href="archive__format_8h.html">&lt;onex/archive/archive_format.h&gt;</a></div>
         </h1>
-        <p><span></span></p>
         <nav class="m-block m-default">
           <h3>Contents</h3>
           <ul>
@@ -64,56 +62,84 @@
               <ul>
                 <li><a href="#derived-classes">Derived classes</a></li>
                 <li><a href="#pub-static-methods">Public static functions</a></li>
-                <li><a href="#typeless-methods">Constructors, destructors, conversion operators</a></li>
                 <li><a href="#pub-methods">Public functions</a></li>
               </ul>
             </li>
           </ul>
         </nav>
+<p>Abstract base for .NOS archive format parsers.</p><p>Each .NOS file starts with a 16-byte header whose first four bytes identify the archive sub-format. Derived classes implement the entry-table layout for their specific format (CCInf, text, zlib-compressed, …).</p>
         <section id="derived-classes">
           <h2><a href="#derived-classes">Derived classes</a></h2>
           <dl class="m-doc">
             <dt>
               class <a href="classonex_1_1archive_1_1CcinfArchiveFormat.html" class="m-doc">CcinfArchiveFormat</a> <span class="m-label m-flat m-warning">final</span>
             </dt>
-            <dd><span></span></dd>
+            <dd></dd>
             <dt>
               class <a href="classonex_1_1archive_1_1TextArchiveFormat.html" class="m-doc">TextArchiveFormat</a> <span class="m-label m-flat m-warning">final</span>
             </dt>
-            <dd><span></span></dd>
+            <dd></dd>
             <dt>
               class <a href="classonex_1_1archive_1_1ZlibArchiveFormat.html" class="m-doc">ZlibArchiveFormat</a> <span class="m-label m-flat m-warning">final</span>
             </dt>
-            <dd><span></span></dd>
+            <dd></dd>
           </dl>
         </section>
         <section id="pub-static-methods">
           <h2><a href="#pub-static-methods">Public static functions</a></h2>
           <dl class="m-doc">
-            <dt id="ae1ea143455fee02929f7de9302f187a5">
-              <span class="m-doc-wrap-bumper">static auto <a href="#ae1ea143455fee02929f7de9302f187a5" class="m-doc-self">detect</a>(</span><span class="m-doc-wrap">std::span&lt;const uint8_t&gt; header) -&gt; std::unique_ptr&lt;<a href="structonex_1_1archive_1_1ArchiveFormat.html" class="m-doc">ArchiveFormat</a>&gt;</span>
+            <dt>
+              <span class="m-doc-wrap-bumper">static auto <a href="#ae1ea143455fee02929f7de9302f187a5" class="m-doc">detect</a>(</span><span class="m-doc-wrap">std::span&lt;const uint8_t&gt; header) -&gt; std::unique_ptr&lt;<a href="structonex_1_1archive_1_1ArchiveFormat.html" class="m-doc">ArchiveFormat</a>&gt;</span>
             </dt>
-            <dd><span></span></dd>
-          </dl>
-        </section>
-        <section id="typeless-methods">
-          <h2><a href="#typeless-methods">Constructors, destructors, conversion operators</a></h2>
-          <dl class="m-doc">
-            <dt id="a93e1551c1c6156e706f1825c6c6e6c4c">
-              <span class="m-doc-wrap-bumper"><a href="#a93e1551c1c6156e706f1825c6c6e6c4c" class="m-doc-self">~ArchiveFormat</a>(</span><span class="m-doc-wrap">) <span class="m-label m-flat m-info">defaulted</span> <span class="m-label m-flat m-warning">virtual</span></span>
-            </dt>
-            <dd><span></span></dd>
+            <dd></dd>
           </dl>
         </section>
         <section id="pub-methods">
           <h2><a href="#pub-methods">Public functions</a></h2>
           <dl class="m-doc">
-            <dt id="acb958f156746c807e0e45aa377f19ec7">
-              <span class="m-doc-wrap-bumper">auto <a href="#acb958f156746c807e0e45aa377f19ec7" class="m-doc-self">parse_entry_table</a>(</span><span class="m-doc-wrap">std::span&lt;const uint8_t&gt; header,
+            <dt>
+              <span class="m-doc-wrap-bumper">auto <a href="#acb958f156746c807e0e45aa377f19ec7" class="m-doc">parse_entry_table</a>(</span><span class="m-doc-wrap">std::span&lt;const uint8_t&gt; header,
               std::istream&amp; stream) -&gt; <a href="structonex_1_1Result.html" class="m-doc">Result</a>&lt;std::vector&lt;<a href="structonex_1_1archive_1_1EntryInfo.html" class="m-doc">EntryInfo</a>&gt;&gt;=0 <span class="m-label m-flat m-warning">virtual</span></span>
             </dt>
-            <dd><span></span></dd>
+            <dd></dd>
           </dl>
+        </section>
+        <section>
+          <h2>Function documentation</h2>
+          <section class="m-doc-details" id="ae1ea143455fee02929f7de9302f187a5"><div>
+            <h3>
+              <span class="m-doc-wrap-bumper">static std::unique_ptr&lt;<a href="structonex_1_1archive_1_1ArchiveFormat.html" class="m-doc">ArchiveFormat</a>&gt; onex::<wbr />archive::<wbr />ArchiveFormat::<wbr /></span><span class="m-doc-wrap"><span class="m-doc-wrap-bumper"><a href="#ae1ea143455fee02929f7de9302f187a5" class="m-doc-self">detect</a>(</span><span class="m-doc-wrap">std::span&lt;const uint8_t&gt; header)</span></span>
+            </h3>
+<p>Detect the archive format from its header and return a matching parser. Returns nullptr if the header is not recognised.</p>
+          </div></section>
+          <section class="m-doc-details" id="acb958f156746c807e0e45aa377f19ec7"><div>
+            <h3>
+              <span class="m-doc-wrap-bumper"><a href="structonex_1_1Result.html" class="m-doc">Result</a>&lt;std::vector&lt;<a href="structonex_1_1archive_1_1EntryInfo.html" class="m-doc">EntryInfo</a>&gt;&gt;=0 onex::<wbr />archive::<wbr />ArchiveFormat::<wbr /></span><span class="m-doc-wrap"><span class="m-doc-wrap-bumper"><a href="#acb958f156746c807e0e45aa377f19ec7" class="m-doc-self">parse_entry_table</a>(</span><span class="m-doc-wrap">std::span&lt;const uint8_t&gt; header,
+              std::istream&amp; stream) <span class="m-label m-warning">virtual</span></span></span>
+            </h3>
+            <table class="m-table m-fullwidth m-flat">
+              <thead>
+                <tr><th colspan="2">Parameters</th></tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td style="width: 1%">header</td>
+                  <td>The 16-byte archive header.</td>
+                </tr>
+                <tr>
+                  <td>stream</td>
+                  <td>The archive stream (positioned after the header).</td>
+                </tr>
+              </tbody>
+              <tfoot>
+                <tr>
+                  <th>Returns</th>
+                  <td>A vector of <a href="structonex_1_1archive_1_1EntryInfo.html" class="m-doc">EntryInfo</a>, or an error on parse failure.</td>
+                </tr>
+              </tfoot>
+            </table>
+<p>Parse the entry table from an open archive stream.</p>
+          </div></section>
         </section>
       </div>
     </div>

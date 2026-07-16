@@ -53,9 +53,7 @@
       <div class="m-col-l-10 m-push-l-1">
         <h1>
           <span class="m-breadcrumb"><a href="namespaceonex.html">onex</a>::<wbr/></span><span class="m-breadcrumb"><a href="namespaceonex_1_1downloader.html">downloader</a>::<wbr/></span>GameforgeDownloader <span class="m-thin">class</span>
-          <div class="m-doc-include m-code m-inverted m-text-right"><span class="cp">#include</span> <a class="cpf" href="downloader_8h.html">&lt;onex/downloader/downloader.h&gt;</a></div>
         </h1>
-        <p><span></span></p>
         <nav class="m-block m-default">
           <h3>Contents</h3>
           <ul>
@@ -69,6 +67,7 @@
             </li>
           </ul>
         </nav>
+<p>Downloads .NOS archives from the Gameforge CDN.</p><p>Handles manifest fetching, name resolution, SHA1 verification, and parallel batch downloads via a thread pool.</p>
         <section id="pub-types">
           <h2><a href="#pub-types">Public types</a></h2>
           <dl class="m-doc">
@@ -81,16 +80,12 @@
         <section id="typeless-methods">
           <h2><a href="#typeless-methods">Constructors, destructors, conversion operators</a></h2>
           <dl class="m-doc">
-            <dt id="aa8063e64d816038c8acecc0dddd40806">
-              <span class="m-doc-wrap-bumper"><a href="#aa8063e64d816038c8acecc0dddd40806" class="m-doc-self">GameforgeDownloader</a>(</span><span class="m-doc-wrap">std::string game_id,
+            <dt>
+              <span class="m-doc-wrap-bumper"><a href="#aa8063e64d816038c8acecc0dddd40806" class="m-doc">GameforgeDownloader</a>(</span><span class="m-doc-wrap">std::string game_id,
               std::string build_id,
               std::unique_ptr&lt;<a href="classonex_1_1downloader_1_1HttpClient.html" class="m-doc">HttpClient</a>&gt; http = std::make_unique&lt;<a href="classonex_1_1downloader_1_1CurlHttpClient.html" class="m-doc">CurlHttpClient</a>&gt;()) <span class="m-label m-flat m-info">explicit</span> </span>
             </dt>
-            <dd><span></span></dd>
-            <dt id="a48f2ab6fa34589b378e208d6a70cc1ea">
-              <span class="m-doc-wrap-bumper"><a href="#a48f2ab6fa34589b378e208d6a70cc1ea" class="m-doc-self">~GameforgeDownloader</a>(</span><span class="m-doc-wrap">)</span>
-            </dt>
-            <dd><span></span></dd>
+            <dd></dd>
           </dl>
         </section>
         <section id="pub-methods">
@@ -99,17 +94,17 @@
             <dt id="aa290e603b13cb8b302f09ae7893edb17">
               <span class="m-doc-wrap-bumper">auto <a href="#aa290e603b13cb8b302f09ae7893edb17" class="m-doc-self">fetch_manifest</a>(</span><span class="m-doc-wrap">) -&gt; <a href="structonex_1_1Result.html" class="m-doc">Result</a>&lt;<a href="structonex_1_1downloader_1_1BuildInfo.html" class="m-doc">BuildInfo</a>&gt;</span>
             </dt>
-            <dd><span></span></dd>
-            <dt id="a345934c4fb72e393b8d88c851299983d">
-              <span class="m-doc-wrap-bumper">auto <a href="#a345934c4fb72e393b8d88c851299983d" class="m-doc-self">resolve</a>(</span><span class="m-doc-wrap">const std::vector&lt;<a href="structonex_1_1downloader_1_1BuildInfoEntry.html" class="m-doc">BuildInfoEntry</a>&gt;&amp; entries,
+            <dd>Fetch and parse the CDN build manifest.</dd>
+            <dt>
+              <span class="m-doc-wrap-bumper">auto <a href="#a345934c4fb72e393b8d88c851299983d" class="m-doc">resolve</a>(</span><span class="m-doc-wrap">const std::vector&lt;<a href="structonex_1_1downloader_1_1BuildInfoEntry.html" class="m-doc">BuildInfoEntry</a>&gt;&amp; entries,
               const std::string&amp; name) -&gt; <a href="structonex_1_1Result.html" class="m-doc">Result</a>&lt;<a href="structonex_1_1downloader_1_1BuildInfoEntry.html" class="m-doc">BuildInfoEntry</a>&gt;</span>
             </dt>
-            <dd><span></span></dd>
-            <dt id="a6c4792c047f536389aa3b8730b0e4c37">
-              <span class="m-doc-wrap-bumper">auto <a href="#a6c4792c047f536389aa3b8730b0e4c37" class="m-doc-self">download_file</a>(</span><span class="m-doc-wrap">const <a href="structonex_1_1downloader_1_1BuildInfoEntry.html" class="m-doc">BuildInfoEntry</a>&amp; entry,
+            <dd></dd>
+            <dt>
+              <span class="m-doc-wrap-bumper">auto <a href="#a6c4792c047f536389aa3b8730b0e4c37" class="m-doc">download_file</a>(</span><span class="m-doc-wrap">const <a href="structonex_1_1downloader_1_1BuildInfoEntry.html" class="m-doc">BuildInfoEntry</a>&amp; entry,
               const std::string&amp; target_dir) -&gt; <a href="structonex_1_1Result.html" class="m-doc">Result</a>&lt;<a href="namespaceonex_1_1downloader.html#ace7907da728cbfcc39d6037ae045734c" class="m-doc">FileStatus</a>&gt;</span>
             </dt>
-            <dd><span></span></dd>
+            <dd></dd>
             <dt>
               <span class="m-doc-wrap-bumper">void <a href="#a22e0a9a7a00411a9c679233f23e60661" class="m-doc">set_progress_callback</a>(</span><span class="m-doc-wrap"><a href="namespaceonex_1_1downloader.html#a1801a10d93cadae9d01b668b13417fb0" class="m-doc">ProgressCallback</a> cb)</span>
             </dt>
@@ -128,6 +123,47 @@
         </section>
         <section>
           <h2>Function documentation</h2>
+          <section class="m-doc-details" id="aa8063e64d816038c8acecc0dddd40806"><div>
+            <h3>
+              <span class="m-doc-wrap-bumper"> onex::<wbr />downloader::<wbr />GameforgeDownloader::<wbr /></span><span class="m-doc-wrap"><span class="m-doc-wrap-bumper"><a href="#aa8063e64d816038c8acecc0dddd40806" class="m-doc-self">GameforgeDownloader</a>(</span><span class="m-doc-wrap">std::string game_id,
+              std::string build_id,
+              std::unique_ptr&lt;<a href="classonex_1_1downloader_1_1HttpClient.html" class="m-doc">HttpClient</a>&gt; http = std::make_unique&lt;<a href="classonex_1_1downloader_1_1CurlHttpClient.html" class="m-doc">CurlHttpClient</a>&gt;()) <span class="m-label m-info">explicit</span> </span></span>
+            </h3>
+            <table class="m-table m-fullwidth m-flat">
+              <thead>
+                <tr><th colspan="2">Parameters</th></tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td style="width: 1%">game_id</td>
+                  <td>Game identifier (e.g. &quot;Nostale&quot;).</td>
+                </tr>
+                <tr>
+                  <td>build_id</td>
+                  <td>Build version string (e.g. &quot;latest&quot; or a numeric ID).</td>
+                </tr>
+                <tr>
+                  <td>http</td>
+                  <td>Optional custom <a href="classonex_1_1downloader_1_1HttpClient.html" class="m-doc">HttpClient</a> (defaults to <a href="classonex_1_1downloader_1_1CurlHttpClient.html" class="m-doc">CurlHttpClient</a>).</td>
+                </tr>
+              </tbody>
+            </table>
+<p>Construct a downloader for the given game and build.</p>
+          </div></section>
+          <section class="m-doc-details" id="a345934c4fb72e393b8d88c851299983d"><div>
+            <h3>
+              <span class="m-doc-wrap-bumper"><a href="structonex_1_1Result.html" class="m-doc">Result</a>&lt;<a href="structonex_1_1downloader_1_1BuildInfoEntry.html" class="m-doc">BuildInfoEntry</a>&gt; onex::<wbr />downloader::<wbr />GameforgeDownloader::<wbr /></span><span class="m-doc-wrap"><span class="m-doc-wrap-bumper"><a href="#a345934c4fb72e393b8d88c851299983d" class="m-doc-self">resolve</a>(</span><span class="m-doc-wrap">const std::vector&lt;<a href="structonex_1_1downloader_1_1BuildInfoEntry.html" class="m-doc">BuildInfoEntry</a>&gt;&amp; entries,
+              const std::string&amp; name)</span></span>
+            </h3>
+<p>Resolve an archive name against a manifest into a single entry. Tries exact file-field match first, then bare filename fallback. Returns kAmbiguousMatch if more than one entry matches.</p>
+          </div></section>
+          <section class="m-doc-details" id="a6c4792c047f536389aa3b8730b0e4c37"><div>
+            <h3>
+              <span class="m-doc-wrap-bumper"><a href="structonex_1_1Result.html" class="m-doc">Result</a>&lt;<a href="namespaceonex_1_1downloader.html#ace7907da728cbfcc39d6037ae045734c" class="m-doc">FileStatus</a>&gt; onex::<wbr />downloader::<wbr />GameforgeDownloader::<wbr /></span><span class="m-doc-wrap"><span class="m-doc-wrap-bumper"><a href="#a6c4792c047f536389aa3b8730b0e4c37" class="m-doc-self">download_file</a>(</span><span class="m-doc-wrap">const <a href="structonex_1_1downloader_1_1BuildInfoEntry.html" class="m-doc">BuildInfoEntry</a>&amp; entry,
+              const std::string&amp; target_dir)</span></span>
+            </h3>
+<p>Download a single file and verify its SHA1. Skips if a file with a matching SHA1 already exists.</p>
+          </div></section>
           <section class="m-doc-details" id="a22e0a9a7a00411a9c679233f23e60661"><div>
             <h3>
               <span class="m-doc-wrap-bumper">void onex::<wbr />downloader::<wbr />GameforgeDownloader::<wbr /></span><span class="m-doc-wrap"><span class="m-doc-wrap-bumper"><a href="#a22e0a9a7a00411a9c679233f23e60661" class="m-doc-self">set_progress_callback</a>(</span><span class="m-doc-wrap"><a href="namespaceonex_1_1downloader.html#a1801a10d93cadae9d01b668b13417fb0" class="m-doc">ProgressCallback</a> cb)</span></span>

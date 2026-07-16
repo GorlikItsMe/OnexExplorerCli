@@ -52,11 +52,9 @@
     <div class="m-row">
       <div class="m-col-l-10 m-push-l-1">
         <h1>
-          <div class="m-doc-include m-code m-inverted m-right-m m-text-right"><span class="cp">#include</span> <a class="cpf" href="error_8h.html">&lt;onex/core/error.h&gt;</a></div>
           <div class="m-doc-template">template&lt;typename T&gt;</div>
           <span class="m-breadcrumb"><a href="namespaceonex.html">onex</a>::<wbr/></span>Result <span class="m-thin">struct</span>
         </h1>
-        <p><span></span></p>
         <nav class="m-block m-default">
           <h3>Contents</h3>
           <ul>
@@ -69,13 +67,14 @@
             </li>
           </ul>
         </nav>
+<p>Holds a value of type T together with an optional error code. Implicitly convertible to bool — <code>true</code> means success.</p>
         <section id="typeless-methods">
           <h2><a href="#typeless-methods">Constructors, destructors, conversion operators</a></h2>
           <dl class="m-doc">
             <dt id="aacc411ec4ad113921773b3401b2946fd">
               <span class="m-doc-wrap-bumper"><a href="#aacc411ec4ad113921773b3401b2946fd" class="m-doc-self">operator bool</a>(</span><span class="m-doc-wrap">) const <span class="m-label m-flat m-info">explicit</span> </span>
             </dt>
-            <dd><span></span></dd>
+            <dd>Returns <code>true</code> when the operation succeeded.</dd>
           </dl>
         </section>
         <section id="pub-attribs">
@@ -84,11 +83,11 @@
             <dt id="a16de17a4714c65859b5638f4660a357c">
               T <a href="#a16de17a4714c65859b5638f4660a357c" class="m-doc-self">value</a>
             </dt>
-            <dd><span></span></dd>
+            <dd>The result value (valid only when error is kNone).</dd>
             <dt id="a701b6275ff2d229f5e5ee19bb7cc96c1">
               <a href="namespaceonex.html#a05c0920c83a313044fe3cde1b74ddcbc" class="m-doc">Error</a> <a href="#a701b6275ff2d229f5e5ee19bb7cc96c1" class="m-doc-self">error</a>
             </dt>
-            <dd><span></span></dd>
+            <dd><a href="namespaceonex.html#a05c0920c83a313044fe3cde1b74ddcbc" class="m-doc">Error</a> status of the operation.</dd>
           </dl>
         </section>
       </div>

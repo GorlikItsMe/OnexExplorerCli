@@ -53,9 +53,7 @@
       <div class="m-col-l-10 m-push-l-1">
         <h1>
           <span class="m-breadcrumb"><a href="namespaceonex.html">onex</a>::<wbr/></span><span class="m-breadcrumb"><a href="namespaceonex_1_1archive.html">archive</a>::<wbr/></span>NosArchive <span class="m-thin">class</span>
-          <div class="m-doc-include m-code m-inverted m-text-right"><span class="cp">#include</span> <a class="cpf" href="nos__archive_8h.html">&lt;onex/archive/nos_archive.h&gt;</a></div>
         </h1>
-        <p><span></span></p>
         <nav class="m-block m-default">
           <h3>Contents</h3>
           <ul>
@@ -69,22 +67,23 @@
             </li>
           </ul>
         </nav>
+<p>Represents an open .NOS archive with memory-mapped access.</p><p>Use <a href="classonex_1_1archive_1_1NosArchive.html#a70e0ba93d2e4bddd9ca3ab2513f1137b" class="m-doc">open</a> to construct an instance. Once opened, the entry table and individual entry bodies can be read. Archives are move-only and release the memory mapping on destruction.</p>
         <section id="pub-types">
           <h2><a href="#pub-types">Public types</a></h2>
           <dl class="m-doc">
             <dt id="a4725a24eded3d101d7391117c727034e">
               using <a href="#a4725a24eded3d101d7391117c727034e" class="m-doc-self">Header</a> = std::array&lt;<a href="namespaceonex.html#ad73e3b271b408f0d42d143d81b8d408b" class="m-doc">byte</a>, kNosHeaderSize&gt;
             </dt>
-            <dd><span></span></dd>
+            <dd>The 16-byte raw archive header.</dd>
           </dl>
         </section>
         <section id="pub-static-methods">
           <h2><a href="#pub-static-methods">Public static functions</a></h2>
           <dl class="m-doc">
-            <dt id="a70e0ba93d2e4bddd9ca3ab2513f1137b">
-              <span class="m-doc-wrap-bumper">static auto <a href="#a70e0ba93d2e4bddd9ca3ab2513f1137b" class="m-doc-self">open</a>(</span><span class="m-doc-wrap">const std::filesystem::path&amp; filepath) -&gt; <a href="structonex_1_1Result.html" class="m-doc">Result</a>&lt;<a href="classonex_1_1archive_1_1NosArchive.html" class="m-doc">NosArchive</a>&gt;</span>
+            <dt>
+              <span class="m-doc-wrap-bumper">static auto <a href="#a70e0ba93d2e4bddd9ca3ab2513f1137b" class="m-doc">open</a>(</span><span class="m-doc-wrap">const std::filesystem::path&amp; filepath) -&gt; <a href="structonex_1_1Result.html" class="m-doc">Result</a>&lt;<a href="classonex_1_1archive_1_1NosArchive.html" class="m-doc">NosArchive</a>&gt;</span>
             </dt>
-            <dd><span></span></dd>
+            <dd></dd>
           </dl>
         </section>
         <section id="pub-methods">
@@ -93,24 +92,33 @@
             <dt id="aed3aba51bcf34dce88f7041bb32a698c">
               <span class="m-doc-wrap-bumper">auto <a href="#aed3aba51bcf34dce88f7041bb32a698c" class="m-doc-self">header</a>(</span><span class="m-doc-wrap">) const -&gt; const <a href="classonex_1_1archive_1_1NosArchive.html#a4725a24eded3d101d7391117c727034e" class="m-doc">Header</a>&amp;</span>
             </dt>
-            <dd><span></span></dd>
+            <dd>The raw 16-byte archive header.</dd>
             <dt id="a647e9328eb23836777d92fe2a5ba91d6">
               <span class="m-doc-wrap-bumper">auto <a href="#a647e9328eb23836777d92fe2a5ba91d6" class="m-doc-self">filepath</a>(</span><span class="m-doc-wrap">) const -&gt; const std::string&amp;</span>
             </dt>
-            <dd><span></span></dd>
+            <dd>The path of the opened file.</dd>
             <dt id="aab4d8bc05a6f905b50eed255f333d2b7">
               <span class="m-doc-wrap-bumper">auto <a href="#aab4d8bc05a6f905b50eed255f333d2b7" class="m-doc-self">is_open</a>(</span><span class="m-doc-wrap">) const -&gt; bool</span>
             </dt>
-            <dd><span></span></dd>
+            <dd>Whether this archive has been successfully opened.</dd>
             <dt id="aa9106d5d963d4ad3377cfafed27e0043">
               <span class="m-doc-wrap-bumper">auto <a href="#aa9106d5d963d4ad3377cfafed27e0043" class="m-doc-self">entries</a>(</span><span class="m-doc-wrap">) const -&gt; std::span&lt;const <a href="structonex_1_1archive_1_1EntryInfo.html" class="m-doc">EntryInfo</a>&gt;</span>
             </dt>
-            <dd><span></span></dd>
+            <dd>The parsed entry table — one entry per file in the archive.</dd>
             <dt id="a38a0a052e65c912e20f5d3d6e25adf2a">
               <span class="m-doc-wrap-bumper">auto <a href="#a38a0a052e65c912e20f5d3d6e25adf2a" class="m-doc-self">read_entry</a>(</span><span class="m-doc-wrap">size_t index) -&gt; <a href="structonex_1_1Result.html" class="m-doc">Result</a>&lt;std::vector&lt;uint8_t&gt;&gt;</span>
             </dt>
-            <dd><span></span></dd>
+            <dd>Read (and decompress) the body of entry <code>index</code>.</dd>
           </dl>
+        </section>
+        <section>
+          <h2>Function documentation</h2>
+          <section class="m-doc-details" id="a70e0ba93d2e4bddd9ca3ab2513f1137b"><div>
+            <h3>
+              <span class="m-doc-wrap-bumper">static <a href="structonex_1_1Result.html" class="m-doc">Result</a>&lt;<a href="classonex_1_1archive_1_1NosArchive.html" class="m-doc">NosArchive</a>&gt; onex::<wbr />archive::<wbr />NosArchive::<wbr /></span><span class="m-doc-wrap"><span class="m-doc-wrap-bumper"><a href="#a70e0ba93d2e4bddd9ca3ab2513f1137b" class="m-doc-self">open</a>(</span><span class="m-doc-wrap">const std::filesystem::path&amp; filepath)</span></span>
+            </h3>
+<p>Open a .NOS file from disk. Returns an error if the file cannot be opened or the header is invalid.</p>
+          </div></section>
         </section>
       </div>
     </div>

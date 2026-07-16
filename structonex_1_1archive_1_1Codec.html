@@ -53,41 +53,30 @@
       <div class="m-col-l-10 m-push-l-1">
         <h1>
           <span class="m-breadcrumb"><a href="namespaceonex.html">onex</a>::<wbr/></span><span class="m-breadcrumb"><a href="namespaceonex_1_1archive.html">archive</a>::<wbr/></span>Codec <span class="m-thin">struct</span>
-          <div class="m-doc-include m-code m-inverted m-text-right"><span class="cp">#include</span> <a class="cpf" href="codec_8h.html">&lt;onex/archive/codec.h&gt;</a></div>
         </h1>
-        <p><span></span></p>
+        <p>Abstract codec for compressing/decompressing entry bodies.</p>
         <nav class="m-block m-default">
           <h3>Contents</h3>
           <ul>
             <li>
               Reference
               <ul>
-                <li><a href="#typeless-methods">Constructors, destructors, conversion operators</a></li>
                 <li><a href="#pub-methods">Public functions</a></li>
               </ul>
             </li>
           </ul>
         </nav>
-        <section id="typeless-methods">
-          <h2><a href="#typeless-methods">Constructors, destructors, conversion operators</a></h2>
-          <dl class="m-doc">
-            <dt id="ac8738cc07ab30ea144fd8a40e4e62eed">
-              <span class="m-doc-wrap-bumper"><a href="#ac8738cc07ab30ea144fd8a40e4e62eed" class="m-doc-self">~Codec</a>(</span><span class="m-doc-wrap">) <span class="m-label m-flat m-info">defaulted</span> <span class="m-label m-flat m-warning">virtual</span></span>
-            </dt>
-            <dd><span></span></dd>
-          </dl>
-        </section>
         <section id="pub-methods">
           <h2><a href="#pub-methods">Public functions</a></h2>
           <dl class="m-doc">
             <dt id="a0657ca825618a00a9713aec97a5c517a">
               <span class="m-doc-wrap-bumper">auto <a href="#a0657ca825618a00a9713aec97a5c517a" class="m-doc-self">decode</a>(</span><span class="m-doc-wrap">std::span&lt;const uint8_t&gt; input) const -&gt; <a href="structonex_1_1Result.html" class="m-doc">Result</a>&lt;std::vector&lt;uint8_t&gt;&gt;=0 <span class="m-label m-flat m-warning">virtual</span></span>
             </dt>
-            <dd><span></span></dd>
+            <dd>Decompress or decrypt <code>input</code> into raw bytes.</dd>
             <dt id="ada17fb0bd9edaf7a6d58bd69f6eb1cd2">
               <span class="m-doc-wrap-bumper">auto <a href="#ada17fb0bd9edaf7a6d58bd69f6eb1cd2" class="m-doc-self">encode</a>(</span><span class="m-doc-wrap">std::span&lt;const uint8_t&gt; input) const -&gt; <a href="structonex_1_1Result.html" class="m-doc">Result</a>&lt;std::vector&lt;uint8_t&gt;&gt;=0 <span class="m-label m-flat m-warning">virtual</span></span>
             </dt>
-            <dd><span></span></dd>
+            <dd>Compress or encrypt <code>input</code> into the archive storage format.</dd>
           </dl>
         </section>
       </div>
