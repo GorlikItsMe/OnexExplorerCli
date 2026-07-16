@@ -4,8 +4,8 @@
 #include <onex/core/error.h>
 
 #include <array>
+#include <cstddef>
 #include <filesystem>
-#include <fstream>
 #include <span>
 #include <string>
 #include <vector>
@@ -23,7 +23,7 @@ namespace onex::archive {
 
     auto header() const -> const Header& { return header_; }
     auto filepath() const -> const std::string& { return filepath_; }
-    auto is_open() const -> bool { return stream_.is_open(); }
+    auto is_open() const -> bool { return !filepath_.empty(); }
     auto entries() const -> std::span<const EntryInfo> { return entries_; }
 
     auto read_entry(size_t index) -> Result<std::vector<uint8_t>>;
@@ -31,9 +31,11 @@ namespace onex::archive {
   private:
     NosArchive() = default;
 
+    auto ensure_loaded() -> Error;
+
     Header header_{};
     std::string filepath_;
-    std::ifstream stream_;
+    std::vector<uint8_t> data_;
     std::vector<EntryInfo> entries_;
   };
 

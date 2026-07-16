@@ -2,6 +2,9 @@
 #include <onex/archive/codec.h>
 #include <onex/archive/nos_archive.h>
 
+#include <fstream>
+#include <vector>
+
 namespace onex::archive {
 
   auto NosArchive::open(const std::filesystem::path& filepath) -> Result<NosArchive> {
@@ -32,9 +35,33 @@ namespace onex::archive {
     NosArchive result;
     result.header_ = header;
     result.filepath_ = filepath.string();
-    result.stream_ = std::move(file);
     result.entries_ = std::move(entries.value);
     return {std::move(result)};
+  }
+
+  auto NosArchive::ensure_loaded() -> Error {
+    if (!data_.empty()) {
+      return Error::kNone;
+    }
+
+    std::ifstream file{filepath_, std::ios::binary | std::ios::ate};
+    if (!file.is_open()) {
+      return Error::kReadError;
+    }
+
+    auto file_size = file.tellg();
+    if (file_size < kNosHeaderSize) {
+      return Error::kInvalidFormat;
+    }
+
+    data_.resize(static_cast<size_t>(file_size));
+    file.seekg(0);
+    if (!file.read(reinterpret_cast<char*>(data_.data()), file_size)) {
+      data_.clear();
+      return Error::kReadError;
+    }
+
+    return Error::kNone;
   }
 
   auto NosArchive::read_entry(size_t index) -> Result<std::vector<uint8_t>> {
@@ -42,20 +69,21 @@ namespace onex::archive {
       return {{}, Error::kEntryNotFound};
     }
 
+    auto err = ensure_loaded();
+    if (err != Error::kNone) {
+      return {{}, err};
+    }
+
     const auto& entry = entries_[index];
 
     bool is_text = entry.type == EntryType::TextDat || entry.type == EntryType::TextLst;
-    auto data_offset = static_cast<std::streamoff>(entry.offset) + (is_text ? 0 : kEntryHeaderSize);
-    stream_.seekg(data_offset);
-    if (!stream_) {
-      return {{}, Error::kReadError};
+    auto data_offset = static_cast<size_t>(entry.offset) + (is_text ? 0 : kEntryHeaderSize);
+    if (data_offset + entry.compressed_size > data_.size()) {
+      return {{}, Error::kCorruptArchive};
     }
 
-    std::vector<uint8_t> compressed(entry.compressed_size);
-    if (!stream_.read(reinterpret_cast<char*>(compressed.data()),
-                      static_cast<std::streamsize>(entry.compressed_size))) {
-      return {{}, Error::kReadError};
-    }
+    std::span<const uint8_t> compressed{data_.data() + data_offset,
+                                        static_cast<size_t>(entry.compressed_size)};
 
     bool needs_decode = entry.compressed || is_text;
     if (needs_decode && entry.codec) {
@@ -71,7 +99,7 @@ namespace onex::archive {
       return {std::move(decompressed.value)};
     }
 
-    return {std::move(compressed)};
+    return {std::vector<uint8_t>{compressed.begin(), compressed.end()}};
   }
 
 }  // namespace onex::archive
