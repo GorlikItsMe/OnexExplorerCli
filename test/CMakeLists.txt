@@ -19,10 +19,10 @@ CPMAddPackage("gh:doctest/doctest@2.5.2")
 CPMAddPackage("gh:TheLartians/Format.cmake@1.8.3")
 
 CPMAddPackage(
-  NAME zlib
-  GIT_TAG v1.3.1
-  GITHUB_REPOSITORY madler/zlib EXCLUDE_FROM_ALL YES
-  OPTIONS "ZLIB_BUILD_EXAMPLES OFF"
+  NAME zlib-ng
+  GIT_TAG 2.2.2
+  GITHUB_REPOSITORY zlib-ng/zlib-ng EXCLUDE_FROM_ALL YES
+  OPTIONS "ZLIB_COMPAT ON" "ZLIB_ENABLE_TESTS OFF" "WITH_GTEST OFF"
 )
 
 # lodepng is fetched independently so the test builds under TEST_INSTALLED_VERSION=ON (where the
