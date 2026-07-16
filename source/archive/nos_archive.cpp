@@ -5,7 +5,8 @@
 #include <sys/mman.h>
 #include <unistd.h>
 
-#include <fstream>
+#include <cstring>
+#include <spanstream>
 #include <vector>
 
 namespace onex::archive {
@@ -47,64 +48,56 @@ namespace onex::archive {
       return {NosArchive{}, Error::kFileNotFound};
     }
 
-    std::ifstream file{filepath, std::ios::binary};
-    if (!file.is_open()) {
+    int fd = ::open(filepath.c_str(), O_RDONLY);
+    if (fd == -1) {
       return {NosArchive{}, Error::kReadError};
     }
 
-    Header header{};
-    if (!file.read(reinterpret_cast<char*>(header.data()), kNosHeaderSize)) {
+    off_t file_size = ::lseek(fd, 0, SEEK_END);
+    if (file_size == -1) {
+      ::close(fd);
       return {NosArchive{}, Error::kReadError};
     }
-
-    auto format = ArchiveFormat::detect(header);
-    if (!format) {
+    if (file_size < kNosHeaderSize) {
+      ::close(fd);
       return {NosArchive{}, Error::kInvalidFormat};
     }
 
-    auto entries = format->parse_entry_table(header, file);
+    auto size = static_cast<size_t>(file_size);
+    void* addr = ::mmap(nullptr, size, PROT_READ, MAP_PRIVATE, fd, 0);
+    ::close(fd);
+    if (addr == MAP_FAILED) {
+      return {NosArchive{}, Error::kReadError};
+    }
+
+    ::posix_madvise(addr, size, POSIX_MADV_WILLNEED);
+    ::posix_madvise(addr, size, POSIX_MADV_SEQUENTIAL);
+
+    Header header;
+    std::memcpy(header.data(), addr, kNosHeaderSize);
+
+    auto format = ArchiveFormat::detect(header);
+    if (!format) {
+      ::munmap(addr, size);
+      return {NosArchive{}, Error::kInvalidFormat};
+    }
+
+    std::ispanstream stream{std::span<const char>{static_cast<const char*>(addr), size}};
+    stream.seekg(kNosHeaderSize);
+
+    auto entries = format->parse_entry_table(header, stream);
     if (!entries) {
+      ::munmap(addr, size);
       return {NosArchive{}, entries.error};
     }
 
     NosArchive result;
     result.header_ = header;
     result.filepath_ = filepath.string();
+    result.map_addr_ = addr;
+    result.map_size_ = size;
     result.entries_ = std::move(entries.value);
     return {std::move(result)};
-  }
-
-  auto NosArchive::ensure_loaded() -> Error {
-    if (map_addr_) {
-      return Error::kNone;
-    }
-
-    int fd = ::open(filepath_.c_str(), O_RDONLY);
-    if (fd == -1) {
-      return Error::kReadError;
-    }
-
-    off_t file_size = ::lseek(fd, 0, SEEK_END);
-    if (file_size < kNosHeaderSize) {
-      ::close(fd);
-      return Error::kInvalidFormat;
-    }
-
-    auto size = static_cast<size_t>(file_size);
-    void* addr = ::mmap(nullptr, size, PROT_READ, MAP_PRIVATE, fd, 0);
-    if (addr == MAP_FAILED) {
-      ::close(fd);
-      return Error::kReadError;
-    }
-
-    ::close(fd);
-
-    ::posix_madvise(addr, size, POSIX_MADV_WILLNEED);
-    ::posix_madvise(addr, size, POSIX_MADV_SEQUENTIAL);
-
-    map_addr_ = addr;
-    map_size_ = size;
-    return Error::kNone;
   }
 
   auto NosArchive::read_entry(size_t index) -> Result<std::vector<uint8_t>> {
@@ -112,16 +105,11 @@ namespace onex::archive {
       return {{}, Error::kEntryNotFound};
     }
 
-    auto err = ensure_loaded();
-    if (err != Error::kNone) {
-      return {{}, err};
-    }
-
     const auto& entry = entries_[index];
 
     bool is_text = entry.type == EntryType::TextDat || entry.type == EntryType::TextLst;
     auto data_offset = static_cast<size_t>(entry.offset) + (is_text ? 0 : kEntryHeaderSize);
-    if (data_offset + entry.compressed_size > map_size_) {
+    if (data_offset > map_size_ || entry.compressed_size > map_size_ - data_offset) {
       return {{}, Error::kCorruptArchive};
     }
 

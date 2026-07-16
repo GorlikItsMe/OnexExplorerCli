@@ -3,6 +3,7 @@
 #include <onex/archive/entry.h>
 #include <onex/core/error.h>
 
+#include <istream>
 #include <memory>
 #include <span>
 #include <vector>

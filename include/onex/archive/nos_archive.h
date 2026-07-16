@@ -37,8 +37,6 @@ namespace onex::archive {
   private:
     NosArchive() = default;
 
-    auto ensure_loaded() -> Error;
-
     Header header_{};
     std::string filepath_;
     void* map_addr_ = nullptr;
