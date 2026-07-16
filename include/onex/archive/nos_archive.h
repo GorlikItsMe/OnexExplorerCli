@@ -19,6 +19,12 @@ namespace onex::archive {
   public:
     using Header = std::array<byte, kNosHeaderSize>;
 
+    NosArchive(NosArchive&& other) noexcept;
+    auto operator=(NosArchive&& other) noexcept -> NosArchive&;
+    NosArchive(const NosArchive&) = delete;
+    auto operator=(const NosArchive&) -> NosArchive& = delete;
+    ~NosArchive();
+
     static auto open(const std::filesystem::path& filepath) -> Result<NosArchive>;
 
     auto header() const -> const Header& { return header_; }
@@ -35,7 +41,8 @@ namespace onex::archive {
 
     Header header_{};
     std::string filepath_;
-    std::vector<uint8_t> data_;
+    void* map_addr_ = nullptr;
+    size_t map_size_ = 0;
     std::vector<EntryInfo> entries_;
   };
 

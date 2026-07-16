@@ -1,11 +1,46 @@
+#include <fcntl.h>
 #include <onex/archive/archive_format.h>
 #include <onex/archive/codec.h>
 #include <onex/archive/nos_archive.h>
+#include <sys/mman.h>
+#include <unistd.h>
 
 #include <fstream>
 #include <vector>
 
 namespace onex::archive {
+
+  NosArchive::NosArchive(NosArchive&& other) noexcept
+      : header_(other.header_),
+        filepath_(std::move(other.filepath_)),
+        map_addr_(other.map_addr_),
+        map_size_(other.map_size_),
+        entries_(std::move(other.entries_)) {
+    other.map_addr_ = nullptr;
+    other.map_size_ = 0;
+  }
+
+  auto NosArchive::operator=(NosArchive&& other) noexcept -> NosArchive& {
+    if (this != &other) {
+      if (map_addr_) {
+        ::munmap(map_addr_, map_size_);
+      }
+      header_ = other.header_;
+      filepath_ = std::move(other.filepath_);
+      map_addr_ = other.map_addr_;
+      map_size_ = other.map_size_;
+      entries_ = std::move(other.entries_);
+      other.map_addr_ = nullptr;
+      other.map_size_ = 0;
+    }
+    return *this;
+  }
+
+  NosArchive::~NosArchive() {
+    if (map_addr_) {
+      ::munmap(map_addr_, map_size_);
+    }
+  }
 
   auto NosArchive::open(const std::filesystem::path& filepath) -> Result<NosArchive> {
     if (!std::filesystem::exists(filepath)) {
@@ -40,27 +75,34 @@ namespace onex::archive {
   }
 
   auto NosArchive::ensure_loaded() -> Error {
-    if (!data_.empty()) {
+    if (map_addr_) {
       return Error::kNone;
     }
 
-    std::ifstream file{filepath_, std::ios::binary | std::ios::ate};
-    if (!file.is_open()) {
+    int fd = ::open(filepath_.c_str(), O_RDONLY);
+    if (fd == -1) {
       return Error::kReadError;
     }
 
-    auto file_size = file.tellg();
+    off_t file_size = ::lseek(fd, 0, SEEK_END);
     if (file_size < kNosHeaderSize) {
+      ::close(fd);
       return Error::kInvalidFormat;
     }
 
-    data_.resize(static_cast<size_t>(file_size));
-    file.seekg(0);
-    if (!file.read(reinterpret_cast<char*>(data_.data()), file_size)) {
-      data_.clear();
+    auto size = static_cast<size_t>(file_size);
+    void* addr = ::mmap(nullptr, size, PROT_READ, MAP_PRIVATE, fd, 0);
+    if (addr == MAP_FAILED) {
+      ::close(fd);
       return Error::kReadError;
     }
 
+    ::close(fd);
+
+    ::posix_madvise(addr, size, POSIX_MADV_WILLNEED);
+
+    map_addr_ = addr;
+    map_size_ = size;
     return Error::kNone;
   }
 
@@ -78,11 +120,12 @@ namespace onex::archive {
 
     bool is_text = entry.type == EntryType::TextDat || entry.type == EntryType::TextLst;
     auto data_offset = static_cast<size_t>(entry.offset) + (is_text ? 0 : kEntryHeaderSize);
-    if (data_offset + entry.compressed_size > data_.size()) {
+    if (data_offset + entry.compressed_size > map_size_) {
       return {{}, Error::kCorruptArchive};
     }
 
-    std::span<const uint8_t> compressed{data_.data() + data_offset,
+    auto base = static_cast<const uint8_t*>(map_addr_);
+    std::span<const uint8_t> compressed{base + data_offset,
                                         static_cast<size_t>(entry.compressed_size)};
 
     bool needs_decode = entry.compressed || is_text;
