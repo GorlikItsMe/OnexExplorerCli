@@ -51,6 +51,7 @@ target_link_libraries(onex_explorer_wasm PRIVATE onex_core)
 target_link_options(
   onex_explorer_wasm
   PRIVATE
+  --bind
   -sMODULARIZE=1
   -sEXPORT_ES6=1
   -sEXPORT_NAME=createOnexModule
