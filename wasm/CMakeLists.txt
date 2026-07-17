@@ -61,6 +61,4 @@ target_link_options(
   -sSINGLE_FILE=0
   -sNO_EXIT_RUNTIME=1
   -sEXPORTED_RUNTIME_METHODS=["FS","callMain"]
-  --emit-tsd
-  onex.d.ts
 )
