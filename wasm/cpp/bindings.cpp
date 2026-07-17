@@ -1,8 +1,7 @@
 #include <emscripten/bind.h>
 #include <emscripten/val.h>
-
-#include <onex/archive/nos_archive.h>
 #include <onex/archive/image/entry_image.h>
+#include <onex/archive/nos_archive.h>
 
 #include <string>
 #include <vector>
@@ -24,13 +23,9 @@ public:
     return true;
   }
 
-  bool isOpen() const {
-    return archive_ && archive_->is_open();
-  }
+  bool isOpen() const { return archive_ && archive_->is_open(); }
 
-  std::string filepath() const {
-    return archive_ ? archive_->filepath() : "";
-  }
+  std::string filepath() const { return archive_ ? archive_->filepath() : ""; }
 
   int entryCount() const {
     if (!archive_) return 0;
@@ -96,15 +91,15 @@ val decodeEntryToPng(std::vector<uint8_t> data, int type) {
 
 EMSCRIPTEN_BINDINGS(onex_explorer) {
   class_<Archive>("Archive")
-    .constructor<>()
-    .function("open", &Archive::open)
-    .function("isOpen", &Archive::isOpen)
-    .function("filepath", &Archive::filepath)
-    .function("entryCount", &Archive::entryCount)
-    .function("readEntry", &Archive::readEntry)
-    .function("entryAt", &Archive::entryAt)
-    .function("entries", &Archive::entries)
-    .function("lastError", &Archive::lastError);
+      .constructor<>()
+      .function("open", &Archive::open)
+      .function("isOpen", &Archive::isOpen)
+      .function("filepath", &Archive::filepath)
+      .function("entryCount", &Archive::entryCount)
+      .function("readEntry", &Archive::readEntry)
+      .function("entryAt", &Archive::entryAt)
+      .function("entries", &Archive::entries)
+      .function("lastError", &Archive::lastError);
 
   function("decodeEntryToPng", &decodeEntryToPng);
 
