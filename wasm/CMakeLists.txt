@@ -1,6 +1,7 @@
 cmake_minimum_required(VERSION 3.14)
 
-project(onex-explorer-wasm
+project(
+  onex-explorer-wasm
   VERSION 0.1.0
   LANGUAGES CXX
 )
@@ -20,8 +21,7 @@ CPMAddPackage(
 CPMAddPackage(
   NAME zlib-ng
   GIT_TAG 2.2.2
-  GITHUB_REPOSITORY zlib-ng/zlib-ng
-  EXCLUDE_FROM_ALL YES
+  GITHUB_REPOSITORY zlib-ng/zlib-ng EXCLUDE_FROM_ALL YES
   OPTIONS "ZLIB_COMPAT ON" "ZLIB_ENABLE_TESTS OFF" "WITH_GTEST OFF"
 )
 
@@ -37,10 +37,8 @@ target_include_directories(fpng SYSTEM PUBLIC ../third_party/fpng)
 target_compile_features(fpng PUBLIC cxx_std_17)
 set_target_properties(fpng PROPERTIES POSITION_INDEPENDENT_CODE ON)
 
-file(GLOB_RECURSE core_sources CONFIGURE_DEPENDS
-  ../source/archive/*.cpp
-  ../source/codecs/*.cpp
-  ../source/onex.cpp
+file(GLOB_RECURSE core_sources CONFIGURE_DEPENDS ../source/archive/*.cpp ../source/codecs/*.cpp
+     ../source/onex.cpp
 )
 add_library(onex_core STATIC ${core_sources})
 target_include_directories(onex_core PUBLIC ../include)
@@ -50,15 +48,27 @@ target_link_libraries(onex_core PUBLIC fmt::fmt nlohmann_json::nlohmann_json zli
 add_executable(onex_explorer_wasm cpp/bindings.cpp)
 target_link_libraries(onex_explorer_wasm PRIVATE onex_core)
 
-target_link_options(onex_explorer_wasm PRIVATE
-  -s MODULARIZE=1
-  -s EXPORT_ES6=1
-  -s EXPORT_NAME=createOnexModule
-  -s ALLOW_MEMORY_GROWTH=1
-  -s FILESYSTEM=1
-  -s WASM=1
-  -s SINGLE_FILE=0
-  -s NO_EXIT_RUNTIME=1
-  -s EXPORTED_RUNTIME_METHODS=["FS","callMain"]
-  --emit-tsd onex.d.ts
+target_link_options(
+  onex_explorer_wasm
+  PRIVATE
+  -s
+  MODULARIZE=1
+  -s
+  EXPORT_ES6=1
+  -s
+  EXPORT_NAME=createOnexModule
+  -s
+  ALLOW_MEMORY_GROWTH=1
+  -s
+  FILESYSTEM=1
+  -s
+  WASM=1
+  -s
+  SINGLE_FILE=0
+  -s
+  NO_EXIT_RUNTIME=1
+  -s
+  EXPORTED_RUNTIME_METHODS=["FS","callMain"]
+  --emit-tsd
+  onex.d.ts
 )
