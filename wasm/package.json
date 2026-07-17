@@ -1,0 +1,33 @@
+{
+  "name": "onex-explorer",
+  "version": "0.1.0",
+  "description": "TypeScript library for reading NosTale .NOS archive files",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./wasm/*": "./wasm/*"
+  },
+  "files": [
+    "dist",
+    "wasm/onex_explorer_wasm.js",
+    "wasm/onex_explorer_wasm.wasm"
+  ],
+  "scripts": {
+    "build": "node build.mjs",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "prepublishOnly": "npm run build && npm test"
+  },
+  "keywords": ["nostale", "nos", "archive", "gameforge"],
+  "license": "MIT",
+  "devDependencies": {
+    "typescript": "^5.7.0",
+    "vitest": "^3.0.0"
+  }
+}
