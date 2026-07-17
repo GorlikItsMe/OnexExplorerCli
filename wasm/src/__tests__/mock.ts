@@ -1,10 +1,10 @@
-import { OnexModule, OnexArchiveBinding, EntryInfoRaw } from "../onex.js";
+import {EntryInfoRaw, OnexArchiveBinding, OnexModule} from '../onex.js';
 
 const fsStore = new Map<string, Uint8Array>();
 
 class MockArchive implements OnexArchiveBinding {
   private opened_ = false;
-  private filepath_ = "";
+  private filepath_ = '';
   private entries_: EntryInfoRaw[] = [];
 
   delete(): void {
@@ -22,25 +22,60 @@ class MockArchive implements OnexArchiveBinding {
         return false;
       }
       this.entries_ = [
-        { id: 1, name: "item.dat", creationDate: 12345, compressed: true, type: 4, offset: 0, compressedSize: 100, uncompressedSize: 500 },
-        { id: 2, name: "icon.png", creationDate: 12346, compressed: true, type: 1, offset: 200, compressedSize: 2000, uncompressedSize: 8000 },
-        { id: 3, name: "texture.nos", creationDate: 12347, compressed: false, type: 0, offset: 3000, compressedSize: 16000, uncompressedSize: 16000 },
+        {
+          id: 1,
+          name: 'item.dat',
+          creationDate: 12345,
+          compressed: true,
+          type: 4,
+          offset: 0,
+          compressedSize: 100,
+          uncompressedSize: 500
+        },
+        {
+          id: 2,
+          name: 'icon.png',
+          creationDate: 12346,
+          compressed: true,
+          type: 1,
+          offset: 200,
+          compressedSize: 2000,
+          uncompressedSize: 8000
+        },
+        {
+          id: 3,
+          name: 'texture.nos',
+          creationDate: 12347,
+          compressed: false,
+          type: 0,
+          offset: 3000,
+          compressedSize: 16000,
+          uncompressedSize: 16000
+        },
       ];
     }
     return this.opened_;
   }
 
-  isOpen(): boolean { return this.opened_; }
-  filepath(): string { return this.filepath_; }
-  entryCount(): number { return this.entries_.length; }
-  lastError(): number { return this.opened_ ? 0 : 1; }
+  isOpen(): boolean {
+    return this.opened_;
+  }
+  filepath(): string {
+    return this.filepath_;
+  }
+  entryCount(): number {
+    return this.entries_.length;
+  }
+  lastError(): number {
+    return this.opened_ ? 0 : 1;
+  }
 
-  readEntry(index: number): Uint8Array | null {
+  readEntry(index: number): Uint8Array|null {
     if (!this.opened_ || index < 0 || index >= this.entries_.length) return null;
     return new Uint8Array([0xDE, 0xAD, 0xBE, 0xEF, 0x42]);
   }
 
-  entryAt(index: number): EntryInfoRaw | null {
+  entryAt(index: number): EntryInfoRaw|null {
     if (!this.opened_ || index < 0 || index >= this.entries_.length) return null;
     return this.entries_[index];
   }
