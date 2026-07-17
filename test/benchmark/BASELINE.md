@@ -1,7 +1,7 @@
 # Baseline Benchmark Results
 
-Run on: $(date)
-Commit: $(git rev-parse HEAD)
+Run on: 2026-07-17
+Commit: dbfd7ad
 
 ## Command
 ./build/standalone/OnexExplorerBench \
