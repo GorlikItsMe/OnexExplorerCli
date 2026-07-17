@@ -70,8 +70,8 @@ class MockArchive implements OnexArchiveBinding {
     return this.opened_ ? 0 : 1;
   }
 
-  readEntry(index: number): Uint8Array|null {
-    if (!this.opened_ || index < 0 || index >= this.entries_.length) return null;
+  readEntry(index: number): Uint8Array {
+    if (!this.opened_ || index < 0 || index >= this.entries_.length) return new Uint8Array(0);
     return new Uint8Array([0xDE, 0xAD, 0xBE, 0xEF, 0x42]);
   }
 
@@ -88,9 +88,9 @@ class MockArchive implements OnexArchiveBinding {
 export function createMockModule(): OnexModule {
   return {
     Archive: MockArchive as unknown as new () => OnexArchiveBinding,
-    decodeEntryToPng(data: Uint8Array, type: number): Uint8Array | null {
-      if (data.length === 0) return null;
-      return new Uint8Array([0x89, 0x50, 0x4E, 0x47]); // fake PNG header
+    decodeEntryToPng(data: Uint8Array): Uint8Array {
+      if (data.length === 0) return new Uint8Array(0);
+      return new Uint8Array([0x89, 0x50, 0x4E, 0x47]);  // fake PNG header
     },
     ENTRY_TYPE_TEXTURE: 0,
     ENTRY_TYPE_ICON: 1,
@@ -100,8 +100,12 @@ export function createMockModule(): OnexModule {
     ENTRY_TYPE_TEXT_LST: 5,
     ENTRY_TYPE_UNKNOWN: 6,
     FS: {
-      writeFile(path: string, data: Uint8Array) { fsStore.set(path, data); },
-      unlink(path: string) { fsStore.delete(path); },
+      writeFile(path: string, data: Uint8Array) {
+        fsStore.set(path, data);
+      },
+      unlink(path: string) {
+        fsStore.delete(path);
+      },
     },
   };
 }

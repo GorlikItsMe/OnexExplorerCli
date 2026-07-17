@@ -78,4 +78,23 @@ describe('NosArchive', () => {
     expect(archive.readEntryAsPng(0)).toBeNull();
     expect(archive.getEntries()).toEqual([]);
   });
+
+  it('exposes isOpen state', async () => {
+    const archive = new NosArchive();
+    expect(archive.isOpen).toBe(false);
+    await archive.open(fakeNos);
+    expect(archive.isOpen).toBe(true);
+    archive.close();
+    expect(archive.isOpen).toBe(false);
+  });
+
+  it('supports close + re-open', async () => {
+    const archive = new NosArchive();
+    await archive.open(fakeNos, 'a.nos');
+    expect(archive.entryCount).toBe(3);
+    archive.close();
+    expect(archive.isOpen).toBe(false);
+    await archive.open(fakeNos, 'b.nos');
+    expect(archive.entryCount).toBe(3);
+  });
 });

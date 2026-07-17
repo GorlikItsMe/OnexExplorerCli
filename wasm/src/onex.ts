@@ -1,6 +1,6 @@
 export interface OnexModule {
   Archive: new() => OnexArchiveBinding;
-  decodeEntryToPng(data: Uint8Array, type: number): Uint8Array|null;
+  decodeEntryToPng(data: Uint8Array, type: number): Uint8Array;
   ENTRY_TYPE_TEXTURE: number;
   ENTRY_TYPE_ICON: number;
   ENTRY_TYPE_IMAGE4B: number;
@@ -16,10 +16,11 @@ export interface OnexArchiveBinding {
   isOpen(): boolean;
   filepath(): string;
   entryCount(): number;
-  readEntry(index: number): Uint8Array|null;
+  readEntry(index: number): Uint8Array;
   entryAt(index: number): EntryInfoRaw|null;
   entries(): EntryInfoRaw[];
   lastError(): number;
+  delete(): void;
 }
 
 export interface EntryInfoRaw {

@@ -14,6 +14,7 @@ public:
   Archive() = default;
 
   bool open(const std::string& filepath) {
+    last_error_ = 0;
     auto result = NosArchive::open(filepath);
     if (!result) {
       last_error_ = static_cast<int>(result.error);
@@ -32,11 +33,11 @@ public:
     return static_cast<int>(archive_->entries().size());
   }
 
-  val readEntry(int index) const {
-    if (!archive_) return val::null();
+  std::vector<uint8_t> readEntry(int index) {
+    if (!archive_) return {};
     auto result = archive_->read_entry(static_cast<size_t>(index));
-    if (!result) return val::null();
-    return val(typed_memory_view(result.value.size(), result.value.data()));
+    if (!result) return {};
+    return std::move(result.value);
   }
 
   val entryAt(int index) const {
@@ -83,10 +84,10 @@ private:
   int last_error_ = 0;
 };
 
-val decodeEntryToPng(std::vector<uint8_t> data, int type) {
+std::vector<uint8_t> decodeEntryToPng(std::vector<uint8_t> data, int type) {
   auto result = decode_entry_to_png(data, static_cast<EntryType>(type));
-  if (!result) return val::null();
-  return val(typed_memory_view(result.value.size(), result.value.data()));
+  if (!result) return {};
+  return std::move(result.value);
 }
 
 EMSCRIPTEN_BINDINGS(onex_explorer) {
