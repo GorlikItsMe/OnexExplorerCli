@@ -54,18 +54,15 @@ CPMAddPackage(
   OPTIONS "JSON_BuildTests OFF" "JSON_Install ON"
 )
 
-# lodepng is a single-file library without a CMake target, so we fetch the source via CPM and build
-# the target ourselves.
-CPMAddPackage(
-  NAME lodepng
-  GITHUB_REPOSITORY lvandeve/lodepng
-  GIT_TAG ed6fe5825c6a4fbb7f58ab35a4231c7543cd452a
+# fpng is a fast single-file PNG encoder (used instead of lodepng for encoding).
+add_library(fpng STATIC third_party/fpng/fpng.cpp)
+target_include_directories(fpng SYSTEM PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/third_party/fpng)
+target_compile_features(fpng PUBLIC cxx_std_17)
+set_target_properties(fpng PROPERTIES POSITION_INDEPENDENT_CODE ON)
+if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang" AND CMAKE_SYSTEM_PROCESSOR MATCHES
+                                                 "x86_64|AMD64|i[3-6]86"
 )
-if(lodepng_ADDED)
-  add_library(lodepng STATIC ${lodepng_SOURCE_DIR}/lodepng.cpp)
-  target_include_directories(lodepng SYSTEM PUBLIC ${lodepng_SOURCE_DIR})
-  target_compile_features(lodepng PUBLIC cxx_std_17)
-  set_target_properties(lodepng PROPERTIES POSITION_INDEPENDENT_CODE ON)
+  target_compile_options(fpng PRIVATE -msse4.1 -mpclmul)
 endif()
 
 # ---- Add source files ----
@@ -87,7 +84,7 @@ target_compile_options(${PROJECT_NAME} PUBLIC "$<$<COMPILE_LANG_AND_ID:CXX,MSVC>
 
 target_link_libraries(
   ${PROJECT_NAME} PRIVATE fmt::fmt CURL::libcurl nlohmann_json::nlohmann_json
-                          $<BUILD_INTERFACE:zlibstatic> $<BUILD_INTERFACE:lodepng>
+                          $<BUILD_INTERFACE:zlibstatic> $<BUILD_INTERFACE:fpng>
 )
 
 target_include_directories(

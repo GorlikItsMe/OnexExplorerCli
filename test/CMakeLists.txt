@@ -6,6 +6,7 @@ project(OnexExplorerTests LANGUAGES CXX)
 
 option(ENABLE_TEST_COVERAGE "Enable test coverage" OFF)
 option(TEST_INSTALLED_VERSION "Test the version found by find_package" OFF)
+option(BUILD_BENCHMARK "Build the native C++ benchmark (not run with regular tests)" OFF)
 
 # --- Import tools ----
 
@@ -84,4 +85,10 @@ doctest_discover_tests(${PROJECT_NAME})
 if(ENABLE_TEST_COVERAGE)
   target_compile_options(OnexExplorer PUBLIC -O0 -g -fprofile-arcs -ftest-coverage)
   target_link_options(OnexExplorer PUBLIC -fprofile-arcs -ftest-coverage)
+endif()
+
+# ---- Benchmark (opt-in, excluded from regular CTest) ----
+
+if(BUILD_BENCHMARK)
+  add_subdirectory(benchmark)
 endif()

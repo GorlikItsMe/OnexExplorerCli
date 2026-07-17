@@ -1,10 +1,19 @@
-#include <lodepng.h>
+#include <fpng.h>
 #include <onex/archive/image/converter.h>
 #include <onex/archive/image/entry_image.h>
 #include <onex/archive/image/pixel_format.h>
 
 #include <cstddef>
 #include <cstdint>
+
+namespace {
+
+  struct FpngInit {
+    FpngInit() { fpng::fpng_init(); }
+  };
+  const FpngInit init_fpng;
+
+}  // namespace
 
 namespace onex::archive {
 
@@ -152,9 +161,11 @@ namespace onex::archive {
     }
 
     std::vector<uint8_t> png;
-    const auto err = lodepng::encode(png, rgba.data(), static_cast<unsigned>(plan.value.width),
-                                     static_cast<unsigned>(plan.value.height), LCT_RGBA, 8);
-    if (err != 0) {
+    if (!fpng::fpng_encode_image_to_memory(rgba.data(), static_cast<uint32_t>(plan.value.width),
+                                           static_cast<uint32_t>(plan.value.height), 4, png,
+                                           fpng::FPNG_ENCODE_SLOWER)) {  // two-pass chosen over
+                                                                         // default one-pass —
+                                                                         // see RESULTS_fpng.md
       return {{}, Error::kInvalidFormat};
     }
     return {std::move(png)};
