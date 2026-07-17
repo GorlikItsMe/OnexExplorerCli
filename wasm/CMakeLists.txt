@@ -51,24 +51,15 @@ target_link_libraries(onex_explorer_wasm PRIVATE onex_core)
 target_link_options(
   onex_explorer_wasm
   PRIVATE
-  -s
-  MODULARIZE=1
-  -s
-  EXPORT_ES6=1
-  -s
-  EXPORT_NAME=createOnexModule
-  -s
-  ALLOW_MEMORY_GROWTH=1
-  -s
-  FILESYSTEM=1
-  -s
-  WASM=1
-  -s
-  SINGLE_FILE=0
-  -s
-  NO_EXIT_RUNTIME=1
-  -s
-  EXPORTED_RUNTIME_METHODS=["FS","callMain"]
+  -sMODULARIZE=1
+  -sEXPORT_ES6=1
+  -sEXPORT_NAME=createOnexModule
+  -sALLOW_MEMORY_GROWTH=1
+  -sFILESYSTEM=1
+  -sWASM=1
+  -sSINGLE_FILE=0
+  -sNO_EXIT_RUNTIME=1
+  -sEXPORTED_RUNTIME_METHODS=["FS","callMain"]
   --emit-tsd
   onex.d.ts
 )
