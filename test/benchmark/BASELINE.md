@@ -1,7 +1,8 @@
-# Baseline Benchmark Results
+# Baseline Benchmark Results — lodepng
 
 Run on: 2026-07-17
 Commit: dbfd7ad
+Note: extract was 1 iteration (subsequent fpng runs use 3 iterations).
 
 ## Command
 ./build/standalone/OnexExplorerBench \

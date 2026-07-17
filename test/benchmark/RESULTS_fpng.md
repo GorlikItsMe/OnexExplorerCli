@@ -1,56 +1,60 @@
 # Benchmark Results: fpng vs lodepng
 
+fpng with `FPNG_ENCODE_SLOWER` (two-pass). Extract runs: 3 iterations.
+lodepng baseline: 1 iteration (see BASELINE.md).
+
 ## Summary
 
-| File | Phase | lodepng (before) | fpng (after) | Speedup |
-|------|-------|-----------------|--------------|---------|
-| NS4BbData | encode | 11374ms | 284ms | **40×** |
-| NS4BbData | extract total | 12372ms | 879ms | **14×** |
-| NStpData01 | encode | 3732ms | 90ms | **41×** |
-| NStpData01 | extract total | 3907ms | 292ms | **13×** |
-| NSmnData/NSgtdData/NSmpData04 | encode | N/A | N/A | unchanged |
+| File | Phase | lodepng (before) | fpng (after 3 runs) | Speedup |
+|------|-------|------------------|--------------------|---------|
+| NS4BbData | encode | 11374ms | 1313ms ÷ 3 = 438ms | **26×** |
+| NS4BbData | extract total | 12372ms | 3372ms ÷ 3 = 1124ms | **11×** |
+| NStpData01 | encode | 3732ms | 380ms ÷ 3 = 127ms | **29×** |
+| NStpData01 | extract total | 3907ms | 472ms ÷ 3 = 157ms | **25×** |
 
-## Detail
+## Detail (3 extract iterations)
 
 ========================================
 === /home/user/benchmark/data/NostaleData/NS4BbData.NOS ===
 ========================================
 
 --- open: /home/user/benchmark/data/NostaleData/NS4BbData.NOS ---
-  header read                  cnt=     5  total=     0.01ms  avg=    0.002ms  min=    0.001ms  max=    0.006ms
+  header read                  cnt=     5  total=     0.01ms  avg=    0.003ms  min=    0.001ms  max=    0.008ms
   detect format                cnt=     5  total=     0.00ms  avg=    0.000ms  min=    0.000ms  max=    0.000ms
-  parse entry table            cnt=     5  total=     1.26ms  avg=    0.253ms  min=    0.202ms  max=    0.330ms
-  mmap                         cnt=     5  total=     0.03ms  avg=    0.006ms  min=    0.005ms  max=    0.009ms
-  madvise                      cnt=     5  total=     0.17ms  avg=    0.034ms  min=    0.027ms  max=    0.053ms
-  open total                   cnt=     5  total=     1.52ms  avg=    0.304ms  min=    0.248ms  max=    0.394ms
+  parse entry table            cnt=     5  total=     1.43ms  avg=    0.286ms  min=    0.205ms  max=    0.360ms
+  mmap                         cnt=     5  total=     0.03ms  avg=    0.007ms  min=    0.005ms  max=    0.009ms
+  madvise                      cnt=     5  total=     1.05ms  avg=    0.210ms  min=    0.027ms  max=    0.937ms
+  open total                   cnt=     5  total=     2.59ms  avg=    0.518ms  min=    0.245ms  max=    1.330ms
 --- extract: /home/user/benchmark/data/NostaleData/NS4BbData.NOS ---
-  read_entry                   cnt=   106  total=   468.83ms  avg=    4.423ms  min=    0.003ms  max=   38.398ms
-  img: parse_image_plan        cnt=   106  total=     0.00ms  avg=    0.000ms  min=    0.000ms  max=    0.000ms
-  img: decode_pixels           cnt=   104  total=    97.64ms  avg=    0.939ms  min=    0.169ms  max=    8.286ms
-  img: fpng::encode_image      cnt=   104  total=   282.40ms  avg=    2.715ms  min=    0.588ms  max=   23.210ms
-  img: decode_entry_to_png     cnt=   106  total=   380.69ms  avg=    3.591ms  min=    0.000ms  max=   31.966ms
-  file write                   cnt=   104  total=    25.06ms  avg=    0.241ms  min=    0.049ms  max=    1.744ms
-  entry total                  cnt=   106  total=   876.95ms  avg=    8.273ms  min=    0.003ms  max=   72.990ms
+  read_entry                   cnt=   318  total=  1671.16ms  avg=    5.255ms  min=    0.002ms  max=   61.784ms
+  img: parse_image_plan        cnt=   318  total=     0.02ms  avg=    0.000ms  min=    0.000ms  max=    0.000ms
+  img: decode_pixels           cnt=   312  total=   293.81ms  avg=    0.942ms  min=    0.169ms  max=    9.273ms
+  img: fpng::encode_image      cnt=   312  total=  1313.38ms  avg=    4.210ms  min=    0.821ms  max=   45.660ms
+  img: decode_entry_to_png     cnt=   318  total=  1607.86ms  avg=    5.056ms  min=    0.000ms  max=   55.346ms
+  file write                   cnt=   312  total=    84.22ms  avg=    0.270ms  min=    0.048ms  max=    2.714ms
+  entry total                  cnt=   318  total=  3372.42ms  avg=   10.605ms  min=    0.003ms  max=  120.208ms
+  total output size             76165593 bytes
 
 ========================================
 === /home/user/benchmark/data/NostaleData/NStpData01.NOS ===
 ========================================
 
 --- open: /home/user/benchmark/data/NostaleData/NStpData01.NOS ---
-  header read                  cnt=     5  total=     0.01ms  avg=    0.002ms  min=    0.001ms  max=    0.005ms
+  header read                  cnt=     5  total=     0.01ms  avg=    0.002ms  min=    0.001ms  max=    0.006ms
   detect format                cnt=     5  total=     0.00ms  avg=    0.000ms  min=    0.000ms  max=    0.000ms
-  parse entry table            cnt=     5  total=     2.09ms  avg=    0.417ms  min=    0.354ms  max=    0.509ms
-  mmap                         cnt=     5  total=     0.03ms  avg=    0.007ms  min=    0.005ms  max=    0.013ms
-  madvise                      cnt=     5  total=     0.15ms  avg=    0.029ms  min=    0.027ms  max=    0.034ms
-  open total                   cnt=     5  total=     2.34ms  avg=    0.467ms  min=    0.402ms  max=    0.568ms
+  parse entry table            cnt=     5  total=     2.54ms  avg=    0.508ms  min=    0.370ms  max=    0.650ms
+  mmap                         cnt=     5  total=     0.04ms  avg=    0.009ms  min=    0.005ms  max=    0.019ms
+  madvise                      cnt=     5  total=     0.15ms  avg=    0.029ms  min=    0.028ms  max=    0.033ms
+  open total                   cnt=     5  total=     2.79ms  avg=    0.558ms  min=    0.417ms  max=    0.694ms
 --- extract: /home/user/benchmark/data/NostaleData/NStpData01.NOS ---
-  read_entry                   cnt=   187  total=     6.34ms  avg=    0.034ms  min=    0.000ms  max=    0.165ms
-  img: parse_image_plan        cnt=   187  total=     0.00ms  avg=    0.000ms  min=    0.000ms  max=    0.000ms
-  img: decode_pixels           cnt=   187  total=     8.44ms  avg=    0.045ms  min=    0.000ms  max=    0.164ms
-  img: fpng::encode_image      cnt=   170  total=    90.50ms  avg=    0.532ms  min=    0.001ms  max=    1.645ms
-  img: decode_entry_to_png     cnt=   187  total=    98.97ms  avg=    0.529ms  min=    0.000ms  max=    1.770ms
-  file write                   cnt=   170  total=     8.07ms  avg=    0.047ms  min=    0.012ms  max=    0.194ms
-  entry total                  cnt=   187  total=   113.41ms  avg=    0.606ms  min=    0.001ms  max=    1.962ms
+  read_entry                   cnt=   561  total=    46.81ms  avg=    0.083ms  min=    0.000ms  max=    4.321ms
+  img: parse_image_plan        cnt=   561  total=     0.02ms  avg=    0.000ms  min=    0.000ms  max=    0.000ms
+  img: decode_pixels           cnt=   561  total=    26.31ms  avg=    0.047ms  min=    0.000ms  max=    0.428ms
+  img: fpng::encode_image      cnt=   510  total=   379.94ms  avg=    0.745ms  min=    0.004ms  max=    2.433ms
+  img: decode_entry_to_png     cnt=   561  total=   406.34ms  avg=    0.724ms  min=    0.000ms  max=    2.607ms
+  file write                   cnt=   510  total=    19.06ms  avg=    0.037ms  min=    0.012ms  max=    0.203ms
+  entry total                  cnt=   561  total=   472.32ms  avg=    0.842ms  min=    0.001ms  max=    6.306ms
+  total output size             15348210 bytes
 
 ========================================
 === /home/user/benchmark/data/NostaleData/NSmnData.NOS ===
@@ -59,14 +63,15 @@
 --- open: /home/user/benchmark/data/NostaleData/NSmnData.NOS ---
   header read                  cnt=     5  total=     0.01ms  avg=    0.002ms  min=    0.001ms  max=    0.004ms
   detect format                cnt=     5  total=     0.00ms  avg=    0.000ms  min=    0.000ms  max=    0.000ms
-  parse entry table            cnt=     5  total=    55.11ms  avg=   11.023ms  min=   10.949ms  max=   11.227ms
-  mmap                         cnt=     5  total=     0.04ms  avg=    0.008ms  min=    0.006ms  max=    0.014ms
-  madvise                      cnt=     5  total=     0.03ms  avg=    0.006ms  min=    0.005ms  max=    0.007ms
-  open total                   cnt=     5  total=    55.43ms  avg=   11.085ms  min=   11.000ms  max=   11.325ms
+  parse entry table            cnt=     5  total=    54.64ms  avg=   10.928ms  min=   10.708ms  max=   11.099ms
+  mmap                         cnt=     5  total=     0.08ms  avg=    0.015ms  min=    0.007ms  max=    0.027ms
+  madvise                      cnt=     5  total=     0.03ms  avg=    0.007ms  min=    0.005ms  max=    0.009ms
+  open total                   cnt=     5  total=    55.40ms  avg=   11.081ms  min=   10.790ms  max=   11.278ms
 --- extract: /home/user/benchmark/data/NostaleData/NSmnData.NOS ---
-  read_entry                   cnt= 23432  total=     1.68ms  avg=    0.000ms  min=    0.000ms  max=    0.004ms
-  file write                   cnt= 23432  total=   256.46ms  avg=    0.011ms  min=    0.010ms  max=    0.098ms
-  entry total                  cnt= 23432  total=   259.90ms  avg=    0.011ms  min=    0.010ms  max=    0.098ms
+  read_entry                   cnt= 70296  total=     6.63ms  avg=    0.000ms  min=    0.000ms  max=    0.055ms
+  file write                   cnt= 70296  total=   754.44ms  avg=    0.011ms  min=    0.010ms  max=    0.295ms
+  entry total                  cnt= 70296  total=   766.49ms  avg=    0.011ms  min=    0.010ms  max=    0.295ms
+  total output size             555412 bytes
 
 ========================================
 === /home/user/benchmark/data/NostaleData/NSgtdData.NOS ===
@@ -75,14 +80,15 @@
 --- open: /home/user/benchmark/data/NostaleData/NSgtdData.NOS ---
   header read                  cnt=     5  total=     0.01ms  avg=    0.002ms  min=    0.001ms  max=    0.004ms
   detect format                cnt=     5  total=     0.00ms  avg=    0.000ms  min=    0.000ms  max=    0.000ms
-  parse entry table            cnt=     5  total=     0.25ms  avg=    0.050ms  min=    0.040ms  max=    0.065ms
-  mmap                         cnt=     5  total=     0.03ms  avg=    0.006ms  min=    0.005ms  max=    0.009ms
-  madvise                      cnt=     5  total=     0.14ms  avg=    0.028ms  min=    0.027ms  max=    0.030ms
-  open total                   cnt=     5  total=     0.47ms  avg=    0.095ms  min=    0.081ms  max=    0.117ms
+  parse entry table            cnt=     5  total=     0.24ms  avg=    0.048ms  min=    0.039ms  max=    0.066ms
+  mmap                         cnt=     5  total=     0.03ms  avg=    0.007ms  min=    0.005ms  max=    0.012ms
+  madvise                      cnt=     5  total=     0.88ms  avg=    0.177ms  min=    0.027ms  max=    0.777ms
+  open total                   cnt=     5  total=     1.21ms  avg=    0.242ms  min=    0.078ms  max=    0.863ms
 --- extract: /home/user/benchmark/data/NostaleData/NSgtdData.NOS ---
-  read_entry                   cnt=    38  total=    18.60ms  avg=    0.490ms  min=    0.000ms  max=    2.726ms
-  file write                   cnt=    38  total=     4.87ms  avg=    0.128ms  min=    0.006ms  max=    0.861ms
-  entry total                  cnt=    38  total=    23.48ms  avg=    0.618ms  min=    0.006ms  max=    3.588ms
+  read_entry                   cnt=   114  total=    62.34ms  avg=    0.547ms  min=    0.000ms  max=    5.224ms
+  file write                   cnt=   114  total=    14.14ms  avg=    0.124ms  min=    0.006ms  max=    0.729ms
+  entry total                  cnt=   114  total=    76.49ms  avg=    0.671ms  min=    0.006ms  max=    5.911ms
+  total output size             18060291 bytes
 
 ========================================
 === /home/user/benchmark/data/NostaleData/NSmpData04.NOS ===
@@ -91,13 +97,14 @@
 --- open: /home/user/benchmark/data/NostaleData/NSmpData04.NOS ---
   header read                  cnt=     5  total=     0.01ms  avg=    0.002ms  min=    0.001ms  max=    0.004ms
   detect format                cnt=     5  total=     0.00ms  avg=    0.000ms  min=    0.000ms  max=    0.000ms
-  parse entry table            cnt=     5  total=    44.39ms  avg=    8.877ms  min=    8.758ms  max=    9.026ms
-  mmap                         cnt=     5  total=     0.04ms  avg=    0.009ms  min=    0.007ms  max=    0.013ms
-  madvise                      cnt=     5  total=     0.15ms  avg=    0.030ms  min=    0.028ms  max=    0.032ms
-  open total                   cnt=     5  total=    44.64ms  avg=    8.929ms  min=    8.805ms  max=    9.089ms
+  parse entry table            cnt=     5  total=    45.46ms  avg=    9.093ms  min=    8.692ms  max=    9.316ms
+  mmap                         cnt=     5  total=     0.05ms  avg=    0.011ms  min=    0.007ms  max=    0.015ms
+  madvise                      cnt=     5  total=     0.15ms  avg=    0.029ms  min=    0.028ms  max=    0.030ms
+  open total                   cnt=     5  total=    45.73ms  avg=    9.146ms  min=    8.740ms  max=    9.377ms
 --- extract: /home/user/benchmark/data/NostaleData/NSmpData04.NOS ---
-  read_entry                   cnt=  2048  total=  1027.42ms  avg=    0.502ms  min=    0.007ms  max=    4.857ms
-  file write                   cnt=  2048  total=   170.84ms  avg=    0.083ms  min=    0.012ms  max=    0.724ms
-  entry total                  cnt=  2048  total=  1198.51ms  avg=    0.585ms  min=    0.019ms  max=    5.426ms
+  read_entry                   cnt=  6144  total=  3569.28ms  avg=    0.581ms  min=    0.007ms  max=    8.747ms
+  file write                   cnt=  6144  total=   596.71ms  avg=    0.097ms  min=    0.011ms  max=    3.383ms
+  entry total                  cnt=  6144  total=  4166.94ms  avg=    0.678ms  min=    0.019ms  max=   11.290ms
+  total output size             654306006 bytes
 
 Done.
