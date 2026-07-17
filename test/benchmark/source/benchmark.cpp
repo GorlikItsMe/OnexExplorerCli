@@ -367,7 +367,12 @@ static void run_open_bench(const std::filesystem::path& path, const char* name) 
 static void run_extract_bench(const std::filesystem::path& path, const char* name) {
   ExtractTiming t;
   uint64_t total_bytes = 0;
-  bench_extract(path, t, total_bytes);
+  constexpr int kIterations = 3;
+  for (int i = 0; i < kIterations; ++i) {
+    uint64_t bytes = 0;
+    bench_extract(path, t, bytes);
+    if (total_bytes == 0) total_bytes = bytes;
+  }
 
   std::printf("--- extract: %s ---\n", name);
   t.read_entry.print();
