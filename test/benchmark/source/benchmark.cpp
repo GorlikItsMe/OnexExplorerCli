@@ -1,10 +1,13 @@
-#include <lodepng.h>
+#include <fcntl.h>
+#include <fpng.h>
 #include <onex/archive/archive_format.h>
 #include <onex/archive/codec.h>
 #include <onex/archive/image/converter.h>
 #include <onex/archive/image/entry_image.h>
 #include <onex/archive/image/pixel_format.h>
 #include <onex/archive/nos_archive.h>
+#include <sys/mman.h>
+#include <unistd.h>
 
 #include <algorithm>
 #include <chrono>
@@ -18,10 +21,6 @@
 #include <span>
 #include <string>
 #include <vector>
-
-#include <fcntl.h>
-#include <sys/mman.h>
-#include <unistd.h>
 
 // ============================================================================
 // Timing utilities
@@ -45,8 +44,8 @@ struct Phase {
 
   void print() const {
     if (count == 0) return;
-    std::printf("  %-28s cnt=%6jd  total=%9.2fms  avg=%9.3fms  min=%9.3fms  max=%9.3fms\n",
-                name, static_cast<intmax_t>(count), total_ms, total_ms / count, min_ms, max_ms);
+    std::printf("  %-28s cnt=%6jd  total=%9.2fms  avg=%9.3fms  min=%9.3fms  max=%9.3fms\n", name,
+                static_cast<intmax_t>(count), total_ms, total_ms / count, min_ms, max_ms);
   }
 };
 
@@ -151,21 +150,22 @@ struct ExtractTiming {
   Phase read_entry{"read_entry"};
   Phase parse_plan{"img: parse_image_plan"};
   Phase decode_px{"img: decode_pixels"};
-  Phase lodepng{"img: lodepng::encode"};
+  Phase fpng_enc{"img: fpng::encode_image"};
   Phase img_total{"img: decode_entry_to_png"};
   Phase file_write{"file write"};
   Phase entry_total{"entry total"};
 };
 
 static bool bench_extract(const std::filesystem::path& path, ExtractTiming& t,
-                          int64_t max_entries = -1) {
+                          uint64_t& total_bytes, int64_t max_entries = -1) {
   auto result = onex::archive::NosArchive::open(path);
   if (!result) return false;
 
   auto& archive = result.value;
   auto entries = archive.entries();
-  int64_t limit = (max_entries < 0) ? static_cast<int64_t>(entries.size())
-                                    : std::min<int64_t>(max_entries, static_cast<int64_t>(entries.size()));
+  int64_t limit = (max_entries < 0)
+                      ? static_cast<int64_t>(entries.size())
+                      : std::min<int64_t>(max_entries, static_cast<int64_t>(entries.size()));
 
   std::filesystem::create_directories("/tmp/onex_cpp_bench");
 
@@ -204,43 +204,62 @@ static bool bench_extract(const std::filesystem::path& path, ExtractTiming& t,
         switch (entry.type) {
           case onex::archive::EntryType::Texture: {
             if (data.size() < 8) continue;
-            width = static_cast<int>(static_cast<uint16_t>(data[0]) | static_cast<uint16_t>(data[1]) << 8);
-            height = static_cast<int>(static_cast<uint16_t>(data[2]) | static_cast<uint16_t>(data[3]) << 8);
+            width = static_cast<int>(static_cast<uint16_t>(data[0])
+                                     | static_cast<uint16_t>(data[1]) << 8);
+            height = static_cast<int>(static_cast<uint16_t>(data[2])
+                                      | static_cast<uint16_t>(data[3]) << 8);
             pixel_offset = 8;
             switch (data[4]) {
-              case 0: pix_fmt = onex::archive::PixelFormat::kGbar4444; break;
-              case 1: pix_fmt = onex::archive::PixelFormat::kArgb555; break;
-              case 2: pix_fmt = onex::archive::PixelFormat::kBgra8888; break;
-              case 3: case 4: pix_fmt = onex::archive::PixelFormat::kGrayscale; break;
-              default: continue;
+              case 0:
+                pix_fmt = onex::archive::PixelFormat::kGbar4444;
+                break;
+              case 1:
+                pix_fmt = onex::archive::PixelFormat::kArgb555;
+                break;
+              case 2:
+                pix_fmt = onex::archive::PixelFormat::kBgra8888;
+                break;
+              case 3:
+              case 4:
+                pix_fmt = onex::archive::PixelFormat::kGrayscale;
+                break;
+              default:
+                continue;
             }
             break;
           }
           case onex::archive::EntryType::TileGrid: {
             if (data.size() < 4) continue;
-            width = static_cast<int>(static_cast<uint16_t>(data[0]) | static_cast<uint16_t>(data[1]) << 8);
-            height = static_cast<int>(static_cast<uint16_t>(data[2]) | static_cast<uint16_t>(data[3]) << 8);
+            width = static_cast<int>(static_cast<uint16_t>(data[0])
+                                     | static_cast<uint16_t>(data[1]) << 8);
+            height = static_cast<int>(static_cast<uint16_t>(data[2])
+                                      | static_cast<uint16_t>(data[3]) << 8);
             pixel_offset = 4;
             pix_fmt = onex::archive::PixelFormat::kNstc;
             break;
           }
           case onex::archive::EntryType::Icon: {
             if (data.size() < 13) continue;
-            width = static_cast<int>(static_cast<uint16_t>(data[1]) | static_cast<uint16_t>(data[2]) << 8);
-            height = static_cast<int>(static_cast<uint16_t>(data[3]) | static_cast<uint16_t>(data[4]) << 8);
+            width = static_cast<int>(static_cast<uint16_t>(data[1])
+                                     | static_cast<uint16_t>(data[2]) << 8);
+            height = static_cast<int>(static_cast<uint16_t>(data[3])
+                                      | static_cast<uint16_t>(data[4]) << 8);
             pixel_offset = 13;
             pix_fmt = onex::archive::PixelFormat::kGbar4444;
             break;
           }
           case onex::archive::EntryType::Image4B: {
             if (data.size() < 4) continue;
-            width = static_cast<int>(static_cast<uint16_t>(data[0]) | static_cast<uint16_t>(data[1]) << 8);
-            height = static_cast<int>(static_cast<uint16_t>(data[2]) | static_cast<uint16_t>(data[3]) << 8);
+            width = static_cast<int>(static_cast<uint16_t>(data[0])
+                                     | static_cast<uint16_t>(data[1]) << 8);
+            height = static_cast<int>(static_cast<uint16_t>(data[2])
+                                      | static_cast<uint16_t>(data[3]) << 8);
             pixel_offset = 4;
             pix_fmt = onex::archive::PixelFormat::kBgra8888Interlaced;
             break;
           }
-          default: continue;
+          default:
+            continue;
         }
       }
 
@@ -249,8 +268,7 @@ static bool bench_extract(const std::filesystem::path& path, ExtractTiming& t,
       std::vector<uint8_t> rgba;
       {
         Timer timer(t.decode_px);
-        std::span<const uint8_t> pixel_span(data.data() + pixel_offset,
-                                            data.size() - pixel_offset);
+        std::span<const uint8_t> pixel_span(data.data() + pixel_offset, data.size() - pixel_offset);
         // NOTE: Mirror of decode_pixels() in source/archive/image/entry_image.cpp
         // If new pixel formats are added or the switch changes, update this.
         switch (pix_fmt) {
@@ -281,16 +299,20 @@ static bool bench_extract(const std::filesystem::path& path, ExtractTiming& t,
       if (rgba.empty()) continue;
 
       {
-        Timer timer(t.lodepng);
-        auto err = lodepng::encode(output, rgba.data(),
-                                    static_cast<unsigned>(width),
-                                    static_cast<unsigned>(height), LCT_RGBA, 8);
-        if (err != 0) continue;
+        Timer timer(t.fpng_enc);
+        // Using FPNG_ENCODE_SLOWER (two-pass) — see source/archive/image/entry_image.cpp
+        // for rationale. Benchmark results: test/benchmark/RESULTS_fpng.md
+        auto ok = fpng::fpng_encode_image_to_memory(rgba.data(), static_cast<uint32_t>(width),
+                                                    static_cast<uint32_t>(height), 4, output,
+                                                    fpng::FPNG_ENCODE_SLOWER);
+        if (!ok) continue;
       }
 
       write_ptr = output.data();
       write_size = output.size();
     }
+
+    total_bytes += write_size;
 
     {
       Timer timer(t.file_write);
@@ -319,11 +341,11 @@ struct BenchFile {
 };
 
 static constexpr BenchFile kDefaultFiles[] = {
-  {"NS4BbData",  "temp/nostale/NostaleData/NS4BbData.NOS"},
-  {"NStpData01", "temp/nostale/NostaleData/NStpData01.NOS"},
-  {"NSmnData",   "temp/nostale/NostaleData/NSmnData.NOS"},
-  {"NSgtdData",  "temp/nostale/NostaleData/NSgtdData.NOS"},
-  {"NSmpData04", "temp/downloads/NostaleData/NSmpData04.NOS"},
+    {"NS4BbData", "temp/nostale/NostaleData/NS4BbData.NOS"},
+    {"NStpData01", "temp/nostale/NostaleData/NStpData01.NOS"},
+    {"NSmnData", "temp/nostale/NostaleData/NSmnData.NOS"},
+    {"NSgtdData", "temp/nostale/NostaleData/NSgtdData.NOS"},
+    {"NSmpData04", "temp/downloads/NostaleData/NSmpData04.NOS"},
 };
 
 static void run_open_bench(const std::filesystem::path& path, const char* name) {
@@ -344,26 +366,28 @@ static void run_open_bench(const std::filesystem::path& path, const char* name) 
 
 static void run_extract_bench(const std::filesystem::path& path, const char* name) {
   ExtractTiming t;
-  bench_extract(path, t);
+  uint64_t total_bytes = 0;
+  bench_extract(path, t, total_bytes);
 
   std::printf("--- extract: %s ---\n", name);
   t.read_entry.print();
   t.parse_plan.print();
   t.decode_px.print();
-  t.lodepng.print();
+  t.fpng_enc.print();
   t.img_total.print();
   t.file_write.print();
   t.entry_total.print();
+  std::printf("  %-28s %s %zu bytes\n", "total output size", "", static_cast<size_t>(total_bytes));
 }
 
 int main(int argc, char** argv) {
+  fpng::fpng_init();
+
   std::vector<BenchFile> files;
   if (argc > 1) {
-    for (int i = 1; i < argc; ++i)
-      files.push_back({argv[i], argv[i]});
+    for (int i = 1; i < argc; ++i) files.push_back({argv[i], argv[i]});
   } else {
-    for (auto& f : kDefaultFiles)
-      files.push_back(f);
+    for (auto& f : kDefaultFiles) files.push_back(f);
   }
 
   for (auto& f : files) {
