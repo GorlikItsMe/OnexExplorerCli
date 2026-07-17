@@ -24,7 +24,12 @@
     "test:watch": "vitest",
     "prepublishOnly": "npm run build && npm test"
   },
-  "keywords": ["nostale", "nos", "archive", "gameforge"],
+  "keywords": [
+    "nostale",
+    "nos",
+    "archive",
+    "gameforge"
+  ],
   "license": "MIT",
   "devDependencies": {
     "typescript": "^5.7.0",
