@@ -29,8 +29,8 @@ jobs:
 
           - os: windows-latest
             deps: vcpkg install curl
-            cmake_toolchain: -DCMAKE_TOOLCHAIN_FILE="C:/vcpkg/scripts/buildsystems/vcpkg.cmake"
-            vcpkg_triplet: x64-windows
+            cmake_toolchain: -DCMAKE_TOOLCHAIN_FILE="C:/vcpkg/scripts/buildsystems/vcpkg.cmake" -DVCPKG_TARGET_TRIPLET=x64-windows-static
+            vcpkg_triplet: x64-windows-static
 
     runs-on: ${{ matrix.os }}
 
@@ -47,8 +47,8 @@ jobs:
         uses: actions/cache@v3
         with:
           path: C:/Users/runneradmin/AppData/Local/vcpkg/archives
-          key: ${{ github.workflow }}-vcpkg-curl-x64-windows
-          restore-keys: ${{ github.workflow }}-vcpkg-curl-x64-windows
+          key: ${{ github.workflow }}-vcpkg-curl-x64-windows-static
+          restore-keys: ${{ github.workflow }}-vcpkg-curl-x64-windows-static
 
       - name: Install dependencies
         if: matrix.deps != ''
