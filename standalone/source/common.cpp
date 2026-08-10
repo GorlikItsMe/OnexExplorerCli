@@ -37,6 +37,8 @@ namespace onex::cli {
         return "Image4B";
       case onex::archive::EntryType::TileGrid:
         return "TileGrid";
+      case onex::archive::EntryType::EffectDef:
+        return "EffectDef";
       case onex::archive::EntryType::TextDat:
         return "TextDat";
       case onex::archive::EntryType::TextLst:

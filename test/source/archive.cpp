@@ -235,6 +235,27 @@ TEST_CASE("ZlibArchiveFormat::parse_entry_table returns entries from NS4BbData.N
   }
 }
 
+TEST_CASE("ZlibArchiveFormat::parse_entry_table returns entries from NSeffData.NOS") {
+  auto path = ensure_fixture("NostaleData\\NSeffData.NOS");
+
+  std::ifstream file(path, std::ios::binary);
+  REQUIRE(file.is_open());
+
+  std::array<uint8_t, 16> header{};
+  file.read(reinterpret_cast<char*>(header.data()), 16);
+  REQUIRE(file);
+
+  onex::archive::ZlibArchiveFormat fmt;
+  auto result = fmt.parse_entry_table(header, file);
+  REQUIRE(result);
+  CHECK(result.value.size() > 0);
+
+  // All entries in NSeffData are EffectDef type
+  for (const auto& e : result.value) {
+    CHECK(e.type == onex::archive::EntryType::EffectDef);
+  }
+}
+
 TEST_CASE(
     "ZlibArchiveFormat::parse_entry_table returns kInvalidFormat for truncated offset table") {
   // Buffer has header + fileCount=100 but only 2 entries of offset data

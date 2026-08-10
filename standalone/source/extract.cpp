@@ -1,3 +1,4 @@
+#include <onex/archive/effect/effect_definition.h>
 #include <onex/archive/image/entry_image.h>
 #include <onex/archive/nos_archive.h>
 #include <onex/util/thread_pool.h>
@@ -7,6 +8,7 @@
 #include <fstream>
 #include <iostream>
 #include <mutex>
+#include <string>
 #include <vector>
 
 #include "common.h"
@@ -73,11 +75,13 @@ namespace onex::cli {
                             || entry.type == onex::archive::EntryType::Icon
                             || entry.type == onex::archive::EntryType::Image4B
                             || entry.type == onex::archive::EntryType::TileGrid;
+      const bool is_effect = entry.type == onex::archive::EntryType::EffectDef;
 
       auto out_name = entry.name;
       const uint8_t* write_data = data.value.data();
       auto write_size = data.value.size();
       std::vector<uint8_t> png_bytes;
+      std::string json_text;
 
       if (is_image) {
         auto png = onex::archive::decode_entry_to_png(data.value, entry.type);
@@ -86,6 +90,16 @@ namespace onex::cli {
           write_data = png_bytes.data();
           write_size = png_bytes.size();
           out_name += ".png";
+        } else {
+          out_name += ".bin";
+        }
+      } else if (is_effect) {
+        auto doc = onex::archive::decode_effect_definition(data.value);
+        if (doc) {
+          json_text = doc.value.dump(2);
+          write_data = reinterpret_cast<const uint8_t*>(json_text.data());
+          write_size = json_text.size();
+          out_name += ".json";
         } else {
           out_name += ".bin";
         }
