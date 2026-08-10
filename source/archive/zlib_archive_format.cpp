@@ -139,6 +139,8 @@ namespace onex::archive {
         return EntryType::Image4B;
       case 5:  // NStcData
         return EntryType::TileGrid;
+      case 23:  // NSeffData
+        return EntryType::EffectDef;
       default:
         return EntryType::Unknown;
     }
