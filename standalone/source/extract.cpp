@@ -85,6 +85,14 @@ namespace onex::cli {
       std::vector<uint8_t> png_bytes;
       std::string json_text;
 
+      // Writes a decoded entry as pretty-printed JSON (fallback: raw .bin).
+      const auto write_json = [&](nlohmann::json&& doc) {
+        json_text = std::move(doc).dump(2);
+        write_data = reinterpret_cast<const uint8_t*>(json_text.data());
+        write_size = json_text.size();
+        out_name += ".json";
+      };
+
       if (is_image) {
         auto png = onex::archive::decode_entry_to_png(data.value, entry.type);
         if (png) {
@@ -98,10 +106,7 @@ namespace onex::cli {
       } else if (is_effect) {
         auto doc = onex::archive::decode_effect_definition(data.value);
         if (doc) {
-          json_text = doc.value.dump(2);
-          write_data = reinterpret_cast<const uint8_t*>(json_text.data());
-          write_size = json_text.size();
-          out_name += ".json";
+          write_json(std::move(doc.value));
         } else {
           out_name += ".bin";
         }
@@ -113,10 +118,7 @@ namespace onex::cli {
                                  : onex::archive::SpriteVariant::kMonster;
         auto doc = onex::archive::decode_sprite_info(data.value, variant);
         if (doc) {
-          json_text = doc.value.dump(2);
-          write_data = reinterpret_cast<const uint8_t*>(json_text.data());
-          write_size = json_text.size();
-          out_name += ".json";
+          write_json(std::move(doc.value));
         } else {
           out_name += ".bin";
         }
