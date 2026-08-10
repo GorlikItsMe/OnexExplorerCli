@@ -145,7 +145,7 @@ namespace onex::archive {
           .name = std::move(name),
           .creation_date = *creation_date,
           .compressed = false,
-          .type = EntryType::Unknown,
+          .type = EntryType::SpriteInfo,
           .offset = stored_offset,
           .compressed_size = entry_data_size,
           .uncompressed_size = entry_data_size,

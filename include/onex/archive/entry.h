@@ -9,13 +9,14 @@ namespace onex::archive {
 
   /// Known entry types in a .NOS archive.
   enum class EntryType {
-    Texture,    ///< NStpData, NStpeData, NStpuData (sub-types 7, 11, 12)
-    Icon,       ///< NSipData (24), ITEMS V1.0 (103)
-    Image4B,    ///< NS4BbData (101, 32GBS V1.0)
-    TileGrid,   ///< NStcData (5)
-    EffectDef,  ///< NSeffData (23)
-    TextDat,    ///< .dat file within a TextArchive
-    TextLst,    ///< .lst file within a TextArchive
+    Texture,     ///< NStpData, NStpeData, NStpuData (sub-types 7, 11, 12)
+    Icon,        ///< NSipData (24), ITEMS V1.0 (103)
+    Image4B,     ///< NS4BbData (101, 32GBS V1.0)
+    TileGrid,    ///< NStcData (5)
+    EffectDef,   ///< NSeffData (23)
+    SpriteInfo,  ///< CCINF V1.20 sprite entries (NSmnData / NSpnData)
+    TextDat,     ///< .dat file within a TextArchive
+    TextLst,     ///< .lst file within a TextArchive
     Unknown,
   };
 
