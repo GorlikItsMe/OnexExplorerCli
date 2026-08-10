@@ -112,6 +112,15 @@ namespace onex::cli {
         return true;
       };
 
+      // Writes a decoded entry as pretty-printed JSON; returns false on I/O
+      // failure (callers fall back to a raw .bin write otherwise).
+      const auto write_json = [&](nlohmann::json&& doc) -> bool {
+        auto json_text = std::move(doc).dump(2);
+        out_name += ".json";
+        return write_output(out_name, reinterpret_cast<const uint8_t*>(json_text.data()),
+                            json_text.size());
+      };
+
       if (is_image) {
         auto png = onex::archive::decode_entry_to_png(data.value, entry.type);
         if (png) {
@@ -122,10 +131,7 @@ namespace onex::cli {
       } else if (is_effect) {
         auto doc = onex::archive::decode_effect_definition(data.value);
         if (doc) {
-          auto json_text = doc.value.dump(2);
-          out_name += ".json";
-          return write_output(out_name, reinterpret_cast<const uint8_t*>(json_text.data()),
-                              json_text.size());
+          return write_json(std::move(doc.value));
         }
         out_name += ".bin";
       } else if (is_sprite_info) {
@@ -136,27 +142,14 @@ namespace onex::cli {
                                  : onex::archive::SpriteVariant::kMonster;
         auto doc = onex::archive::decode_sprite_info(data.value, variant);
         if (doc) {
-          auto json_text = doc.value.dump(2);
-          out_name += ".json";
-          return write_output(out_name, reinterpret_cast<const uint8_t*>(json_text.data()),
-                              json_text.size());
+          return write_json(std::move(doc.value));
         }
         out_name += ".bin";
       } else if (is_sprite) {
         auto frames = onex::archive::decode_sprite_frames(data.value);
         if (frames) {
-          nlohmann::json meta = nlohmann::json::array();
-          for (const auto& frame : frames.value) {
-            meta.push_back({{"width", frame.width},
-                            {"height", frame.height},
-                            {"xOrigin", frame.x_origin},
-                            {"yOrigin", frame.y_origin}});
-          }
-          auto json_text = meta.dump(2);
-          if (!write_output(out_name + ".json", reinterpret_cast<const uint8_t*>(json_text.data()),
-                            json_text.size())) {
-            return false;
-          }
+          // Write the PNGs first so the sidecar JSON only appears when the
+          // whole entry has been extracted.
           for (size_t i = 0; i < frames.value.size(); ++i) {
             auto png = onex::archive::encode_sprite_frame_to_png(frames.value[i]);
             if (!png) {
@@ -170,7 +163,14 @@ namespace onex::cli {
               return false;
             }
           }
-          return true;
+          nlohmann::json meta = nlohmann::json::array();
+          for (const auto& frame : frames.value) {
+            meta.push_back({{"width", frame.width},
+                            {"height", frame.height},
+                            {"xOrigin", frame.x_origin},
+                            {"yOrigin", frame.y_origin}});
+          }
+          return write_json(std::move(meta));
         }
         out_name += ".bin";
       }

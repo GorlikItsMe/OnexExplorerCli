@@ -116,6 +116,13 @@ TEST_CASE("decode_sprite_frames rejects a truncated descriptor table") {
   CHECK(frames.error == onex::Error::kInvalidFormat);
 }
 
+TEST_CASE("decode_sprite_frames treats a zero-frame entry as empty") {
+  std::vector<uint8_t> data{0};  // frame count 0, no descriptors
+  auto frames = decode_sprite_frames(data);
+  REQUIRE(frames);
+  CHECK(frames.value.empty());
+}
+
 TEST_CASE("decode_sprite_frames decodes the first entries of NSppData0B") {
   auto path = ensure_fixture("NostaleData\\NSppData0B.NOS");
   auto opened = onex::archive::NosArchive::open(path);
