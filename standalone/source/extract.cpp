@@ -1,6 +1,7 @@
 #include <onex/archive/effect/effect_definition.h>
 #include <onex/archive/image/entry_image.h>
 #include <onex/archive/nos_archive.h>
+#include <onex/archive/sprite/sprite_info.h>
 #include <onex/util/thread_pool.h>
 
 #include <cstdint>
@@ -76,12 +77,21 @@ namespace onex::cli {
                             || entry.type == onex::archive::EntryType::Image4B
                             || entry.type == onex::archive::EntryType::TileGrid;
       const bool is_effect = entry.type == onex::archive::EntryType::EffectDef;
+      const bool is_sprite = entry.type == onex::archive::EntryType::SpriteInfo;
 
       auto out_name = entry.name;
       const uint8_t* write_data = data.value.data();
       auto write_size = data.value.size();
       std::vector<uint8_t> png_bytes;
       std::string json_text;
+
+      // Writes a decoded entry as pretty-printed JSON (fallback: raw .bin).
+      const auto write_json = [&](nlohmann::json&& doc) {
+        json_text = std::move(doc).dump(2);
+        write_data = reinterpret_cast<const uint8_t*>(json_text.data());
+        write_size = json_text.size();
+        out_name += ".json";
+      };
 
       if (is_image) {
         auto png = onex::archive::decode_entry_to_png(data.value, entry.type);
@@ -96,10 +106,19 @@ namespace onex::cli {
       } else if (is_effect) {
         auto doc = onex::archive::decode_effect_definition(data.value);
         if (doc) {
-          json_text = doc.value.dump(2);
-          write_data = reinterpret_cast<const uint8_t*>(json_text.data());
-          write_size = json_text.size();
-          out_name += ".json";
+          write_json(std::move(doc.value));
+        } else {
+          out_name += ".bin";
+        }
+      } else if (is_sprite) {
+        // CCINF archives are either NSmnData (monster sprites) or NSpnData
+        // (player sprites); the variant decides how the header is decoded.
+        const auto variant = filepath.find("NSpnData") != std::string::npos
+                                 ? onex::archive::SpriteVariant::kPlayer
+                                 : onex::archive::SpriteVariant::kMonster;
+        auto doc = onex::archive::decode_sprite_info(data.value, variant);
+        if (doc) {
+          write_json(std::move(doc.value));
         } else {
           out_name += ".bin";
         }

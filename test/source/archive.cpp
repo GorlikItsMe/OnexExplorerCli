@@ -129,6 +129,17 @@ TEST_CASE("NosArchive::read_entry on NSmnData.NOS reads variable-length sprite e
   CHECK(data.value.size() == entries[0].uncompressed_size);
 }
 
+TEST_CASE("NosArchive::open classifies CCINF entries as SpriteInfo") {
+  auto path = ensure_fixture("NostaleData\\NSmnData.NOS");
+
+  auto result = onex::archive::NosArchive::open(path);
+  REQUIRE(result);
+
+  for (const auto& e : result.value.entries()) {
+    CHECK(e.type == onex::archive::EntryType::SpriteInfo);
+  }
+}
+
 // ---------------------------------------------------------------------------
 // ArchiveFormat::detect – header magic detection
 // ---------------------------------------------------------------------------

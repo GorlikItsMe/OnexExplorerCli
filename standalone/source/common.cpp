@@ -39,6 +39,8 @@ namespace onex::cli {
         return "TileGrid";
       case onex::archive::EntryType::EffectDef:
         return "EffectDef";
+      case onex::archive::EntryType::SpriteInfo:
+        return "SpriteInfo";
       case onex::archive::EntryType::TextDat:
         return "TextDat";
       case onex::archive::EntryType::TextLst:
