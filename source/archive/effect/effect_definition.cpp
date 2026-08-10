@@ -27,20 +27,19 @@ namespace onex::archive {
     struct TrackInfo {
       const char* name;  // JSON key of the sub-track within its group
       TrackType type;
-      size_t value_size;
       bool in_texture_transform_group;  // false → transform group (or top level)
     };
 
     // The eight track descriptors of a component, in descriptor order.
     constexpr std::array<TrackInfo, kTrackCount> kTracks = {{
-        {"rotation", TrackType::kQuaternion, 16, false},
-        {"scale", TrackType::kVector3, 12, false},
-        {"translation", TrackType::kVector3, 12, false},
-        {"color", TrackType::kColor, 4, false},
-        {"texture", TrackType::kTexture, 4, false},
-        {"rotation", TrackType::kQuaternion, 16, true},
-        {"scale", TrackType::kVector3, 12, true},
-        {"translation", TrackType::kVector3, 12, true},
+        {"rotation", TrackType::kQuaternion, false},
+        {"scale", TrackType::kVector3, false},
+        {"translation", TrackType::kVector3, false},
+        {"color", TrackType::kColor, false},
+        {"texture", TrackType::kTexture, false},
+        {"rotation", TrackType::kQuaternion, true},
+        {"scale", TrackType::kVector3, true},
+        {"translation", TrackType::kVector3, true},
     }};
 
     // A cursor-based reader with bounds checking. All reads fail gracefully.
@@ -52,13 +51,6 @@ namespace onex::archive {
       bool u8(uint8_t& out) {
         if (!bytes(1)) return false;
         out = data[pos++];
-        return true;
-      }
-      bool i16(int16_t& out) {
-        if (!bytes(2)) return false;
-        out = static_cast<int16_t>(static_cast<uint16_t>(data[pos])
-                                   | static_cast<uint16_t>(data[pos + 1]) << 8);
-        pos += 2;
         return true;
       }
       bool u16(uint16_t& out) {
@@ -111,7 +103,7 @@ namespace onex::archive {
 
     // Packed 16-bit float: sign(1) + exponent(4, bias 7) + mantissa(11).
     // Mirrors taletool PackedFloat16::to_f32.
-    auto packed_f16(uint16_t v) -> float {
+    auto packed_float16(uint16_t v) -> float {
       if (v == 0) {
         return 0.0f;
       }
@@ -181,7 +173,7 @@ namespace onex::archive {
               {"travel_rate", travel},
               {"sine_height_scale", sine_height},
               {"rotate_sine_offset", rotate_sine_offset},
-              {"sine_offset_x", packed_f16(sine_offset_x_raw)},
+              {"sine_offset_x", packed_float16(sine_offset_x_raw)},
           };
         }
         case kKindParticle: {
@@ -227,18 +219,18 @@ namespace onex::archive {
               {"kind", "particle"},
               {"flags", flags},
               {"spawn_offset",
-               nlohmann::json::array(
-                   {packed_f16(spawn_raw[0]), packed_f16(spawn_raw[1]), packed_f16(spawn_raw[2])})},
+               nlohmann::json::array({packed_float16(spawn_raw[0]), packed_float16(spawn_raw[1]),
+                                      packed_float16(spawn_raw[2])})},
               {"rotation",
                nlohmann::json::array(
                    {static_cast<int16_t>(rotation_raw[0]), static_cast<int16_t>(rotation_raw[1]),
                     static_cast<int16_t>(rotation_raw[2]), static_cast<int16_t>(rotation_raw[3])})},
               {"axis_random_range",
-               nlohmann::json::array(
-                   {packed_f16(range_raw[0]), packed_f16(range_raw[1]), packed_f16(range_raw[2])})},
+               nlohmann::json::array({packed_float16(range_raw[0]), packed_float16(range_raw[1]),
+                                      packed_float16(range_raw[2])})},
               {"particle_size",
-               nlohmann::json::array(
-                   {packed_f16(size_raw[0]), packed_f16(size_raw[1]), packed_f16(size_raw[2])})},
+               nlohmann::json::array({packed_float16(size_raw[0]), packed_float16(size_raw[1]),
+                                      packed_float16(size_raw[2])})},
               {"axis_randomization",
                nlohmann::json::array({axis_rand[0], axis_rand[1], axis_rand[2]})},
               {"rotation_randomization",
@@ -423,27 +415,33 @@ namespace onex::archive {
       return {{}, Error::kInvalidFormat};
     }
 
-    const int32_t resource_key = static_cast<int32_t>(
-        static_cast<uint32_t>(data[0]) | static_cast<uint32_t>(data[1]) << 8
-        | static_cast<uint32_t>(data[2]) << 16 | static_cast<uint32_t>(data[3]) << 24);
-    const uint16_t component_count
-        = static_cast<uint16_t>(data[0x0C]) | static_cast<uint16_t>(data[0x0D]) << 8;
+    int32_t resource_key;
+    uint16_t component_count;
+    if (!i32_at(data.data(), data.size(), 0, resource_key)
+        || !u16_at(data.data(), data.size(), 0x0C, component_count)) {
+      return {{}, Error::kInvalidFormat};
+    }
 
     nlohmann::json loader_workspace;
     {
-      const auto slot = [&data](size_t off) -> int32_t {
-        return static_cast<int32_t>(static_cast<uint32_t>(data[off])
-                                    | static_cast<uint32_t>(data[off + 1]) << 8
-                                    | static_cast<uint32_t>(data[off + 2]) << 16
-                                    | static_cast<uint32_t>(data[off + 3]) << 24);
-      };
+      int32_t loaded_tick;
+      int32_t source_record;
+      int32_t child_records;
+      int32_t reference_count;
+      uint16_t flags;
+      if (!i32_at(data.data(), data.size(), 0x04, loaded_tick)
+          || !i32_at(data.data(), data.size(), 0x08, source_record)
+          || !i32_at(data.data(), data.size(), 0x0E, child_records)
+          || !i32_at(data.data(), data.size(), 0x12, reference_count)
+          || !u16_at(data.data(), data.size(), 0x16, flags)) {
+        return {{}, Error::kInvalidFormat};
+      }
       loader_workspace = {
-          {"loaded_tick_slot", slot(0x04)},
-          {"source_record_slot", slot(0x08)},
-          {"child_records_slot", slot(0x0E)},
-          {"reference_count_slot", slot(0x12)},
-          {"flags_slot",
-           static_cast<uint16_t>(data[0x16]) | static_cast<uint16_t>(data[0x17]) << 8},
+          {"loaded_tick_slot", loaded_tick},
+          {"source_record_slot", source_record},
+          {"child_records_slot", child_records},
+          {"reference_count_slot", reference_count},
+          {"flags_slot", flags},
       };
     }
 
