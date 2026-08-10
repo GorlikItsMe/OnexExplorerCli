@@ -15,6 +15,7 @@ namespace onex::archive {
     TileGrid,    ///< NStcData (5)
     EffectDef,   ///< NSeffData (23)
     SpriteInfo,  ///< CCINF V1.20 sprite entries (NSmnData / NSpnData)
+    Sprite,      ///< NSmpData (17) / NSppData (14) sprite frames
     TextDat,     ///< .dat file within a TextArchive
     TextLst,     ///< .lst file within a TextArchive
     Unknown,

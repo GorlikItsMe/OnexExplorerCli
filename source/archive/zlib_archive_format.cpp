@@ -132,6 +132,9 @@ namespace onex::archive {
       case 11:  // NStpeData
       case 12:  // NStpuData
         return EntryType::Texture;
+      case 14:  // NSppData
+      case 17:  // NSmpData
+        return EntryType::Sprite;
       case 24:   // NSipData
       case 103:  // NSipData2006 (ITEMS V1.0)
         return EntryType::Icon;

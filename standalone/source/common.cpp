@@ -41,6 +41,8 @@ namespace onex::cli {
         return "EffectDef";
       case onex::archive::EntryType::SpriteInfo:
         return "SpriteInfo";
+      case onex::archive::EntryType::Sprite:
+        return "Sprite";
       case onex::archive::EntryType::TextDat:
         return "TextDat";
       case onex::archive::EntryType::TextLst:

@@ -129,6 +129,7 @@ namespace onex::archive {
         case EntryType::TextLst:
         case EntryType::EffectDef:
         case EntryType::SpriteInfo:
+        case EntryType::Sprite:
         case EntryType::Unknown:
           return {{}, Error::kInvalidFormat};
       }

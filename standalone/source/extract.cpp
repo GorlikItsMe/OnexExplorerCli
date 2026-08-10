@@ -1,5 +1,6 @@
 #include <onex/archive/effect/effect_definition.h>
 #include <onex/archive/image/entry_image.h>
+#include <onex/archive/image/sprite_frames.h>
 #include <onex/archive/nos_archive.h>
 #include <onex/archive/sprite/sprite_info.h>
 #include <onex/util/thread_pool.h>
@@ -77,40 +78,57 @@ namespace onex::cli {
                             || entry.type == onex::archive::EntryType::Image4B
                             || entry.type == onex::archive::EntryType::TileGrid;
       const bool is_effect = entry.type == onex::archive::EntryType::EffectDef;
-      const bool is_sprite = entry.type == onex::archive::EntryType::SpriteInfo;
+      const bool is_sprite_info = entry.type == onex::archive::EntryType::SpriteInfo;
+      const bool is_sprite = entry.type == onex::archive::EntryType::Sprite;
 
       auto out_name = entry.name;
       const uint8_t* write_data = data.value.data();
       auto write_size = data.value.size();
-      std::vector<uint8_t> png_bytes;
-      std::string json_text;
 
-      // Writes a decoded entry as pretty-printed JSON (fallback: raw .bin).
-      const auto write_json = [&](nlohmann::json&& doc) {
-        json_text = std::move(doc).dump(2);
-        write_data = reinterpret_cast<const uint8_t*>(json_text.data());
-        write_size = json_text.size();
-        out_name += ".json";
+      // Writes one output file, creating the parent directory as needed.
+      const auto write_output
+          = [&](const std::string& name, const uint8_t* bytes, size_t size) -> bool {
+        auto out_path = std::filesystem::path(output_dir) / name;
+        std::error_code ec;
+        if (!std::filesystem::is_directory(out_path.parent_path(), ec)) {
+          if (!std::filesystem::create_directories(out_path.parent_path(), ec) && ec) {
+            std::lock_guard lk(cout_mutex);
+            std::cerr << "OnexExplorerCli: error: cannot create output directory \""
+                      << out_path.parent_path() << "\"\n";
+            return false;
+          }
+        }
+
+        std::ofstream out{out_path, std::ios::binary};
+        if (!out) {
+          std::lock_guard lk(cout_mutex);
+          std::cerr << "OnexExplorerCli: error: cannot write " << out_path << "\n";
+          return false;
+        }
+        out.write(reinterpret_cast<const char*>(bytes), static_cast<std::streamsize>(size));
+
+        std::lock_guard lk(cout_mutex);
+        std::cout << "Extracted " << name << " (" << size << " bytes)\n";
+        return true;
       };
 
       if (is_image) {
         auto png = onex::archive::decode_entry_to_png(data.value, entry.type);
         if (png) {
-          png_bytes = std::move(png.value);
-          write_data = png_bytes.data();
-          write_size = png_bytes.size();
           out_name += ".png";
-        } else {
-          out_name += ".bin";
+          return write_output(out_name, png.value.data(), png.value.size());
         }
+        out_name += ".bin";
       } else if (is_effect) {
         auto doc = onex::archive::decode_effect_definition(data.value);
         if (doc) {
-          write_json(std::move(doc.value));
-        } else {
-          out_name += ".bin";
+          auto json_text = doc.value.dump(2);
+          out_name += ".json";
+          return write_output(out_name, reinterpret_cast<const uint8_t*>(json_text.data()),
+                              json_text.size());
         }
-      } else if (is_sprite) {
+        out_name += ".bin";
+      } else if (is_sprite_info) {
         // CCINF archives are either NSmnData (monster sprites) or NSpnData
         // (player sprites); the variant decides how the header is decoded.
         const auto variant = filepath.find("NSpnData") != std::string::npos
@@ -118,38 +136,46 @@ namespace onex::cli {
                                  : onex::archive::SpriteVariant::kMonster;
         auto doc = onex::archive::decode_sprite_info(data.value, variant);
         if (doc) {
-          write_json(std::move(doc.value));
-        } else {
-          out_name += ".bin";
+          auto json_text = doc.value.dump(2);
+          out_name += ".json";
+          return write_output(out_name, reinterpret_cast<const uint8_t*>(json_text.data()),
+                              json_text.size());
         }
-      }
-
-      auto out_path = std::filesystem::path(output_dir) / out_name;
-      std::error_code ec;
-      if (!std::filesystem::is_directory(out_path.parent_path(), ec)) {
-        if (!std::filesystem::create_directories(out_path.parent_path(), ec) && ec) {
-          std::lock_guard lk(cout_mutex);
-          std::cerr << "OnexExplorerCli: error: cannot create output directory \""
-                    << out_path.parent_path() << "\"\n";
-          return false;
+        out_name += ".bin";
+      } else if (is_sprite) {
+        auto frames = onex::archive::decode_sprite_frames(data.value);
+        if (frames) {
+          nlohmann::json meta = nlohmann::json::array();
+          for (const auto& frame : frames.value) {
+            meta.push_back({{"width", frame.width},
+                            {"height", frame.height},
+                            {"xOrigin", frame.x_origin},
+                            {"yOrigin", frame.y_origin}});
+          }
+          auto json_text = meta.dump(2);
+          if (!write_output(out_name + ".json", reinterpret_cast<const uint8_t*>(json_text.data()),
+                            json_text.size())) {
+            return false;
+          }
+          for (size_t i = 0; i < frames.value.size(); ++i) {
+            auto png = onex::archive::encode_sprite_frame_to_png(frames.value[i]);
+            if (!png) {
+              std::lock_guard lk(cout_mutex);
+              std::cerr << "OnexExplorerCli: error: frame " << i << " of entry " << entry.id
+                        << " failed to encode\n";
+              return false;
+            }
+            if (!write_output(out_name + "_" + std::to_string(i) + ".png", png.value.data(),
+                              png.value.size())) {
+              return false;
+            }
+          }
+          return true;
         }
+        out_name += ".bin";
       }
 
-      std::ofstream out{out_path, std::ios::binary};
-      if (!out) {
-        std::lock_guard lk(cout_mutex);
-        std::cerr << "OnexExplorerCli: error: cannot write " << out_path << "\n";
-        return false;
-      }
-      out.write(reinterpret_cast<const char*>(write_data),
-                static_cast<std::streamsize>(write_size));
-
-      {
-        std::lock_guard lk(cout_mutex);
-        std::cout << "Extracted " << out_name << " (" << write_size << " bytes)\n";
-      }
-
-      return true;
+      return write_output(out_name, write_data, write_size);
     });
 
     if (!failed_indices.empty()) {
