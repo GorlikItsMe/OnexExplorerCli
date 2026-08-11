@@ -112,8 +112,8 @@ namespace onex::cli {
         return true;
       };
 
-      // Writes a decoded entry as pretty-printed JSON; returns false on I/O
-      // failure (callers fall back to a raw .bin write otherwise).
+      // Writes a decoded entry as pretty-printed JSON; on I/O failure the
+      // whole entry fails (callers return its result).
       const auto write_json = [&](nlohmann::json&& doc) -> bool {
         auto json_text = std::move(doc).dump(2);
         out_name += ".json";
