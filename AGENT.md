@@ -13,6 +13,10 @@ After EVERY code change, in this exact order:
 Errors from check-format show under a crash trace (which is not an error in this case).
 Always fix styling errors before pushing — CI runs the same check.
 
+## Language
+
+All tracker issues, comments, and repo documentation are written in English. Keep all notation in English.
+
 ## Agent skills
 
 ### Issue tracker
