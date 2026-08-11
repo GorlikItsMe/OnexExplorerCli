@@ -21,6 +21,11 @@
   | NStpeData | Effect textures |
   | NStpuData | UI textures |
   | NStcData | Map grids |
+  | NSmnData | Mob-related sprite infos (CCINF V1.20) |
+  | NSpnData | Player-related sprite infos (CCINF V1.20) |
+  | NSmpData | Monster-related sprites |
+  | NSppData | Player-related sprites |
+  | NSeffData | VFX configs (effect definitions) |
 
   @section supported_partial Partially Supported
 
@@ -29,10 +34,6 @@
 
   | Archive name | Description | Limitation |
   |---|---|---|
-  | NSmpData | Monster-related sprites | CCINF V1.20 — openable, needs format improvements |
-  | NSppData | Player-related sprites | CCINF V1.20 — openable, needs format improvements |
-  | NSmnData | Mob-related sprite infos | Format not yet fully implemented |
-  | NSpnData | Player-related sprite infos | Format not yet fully implemented |
   | NSmcData | Monster-related animation kits | Format not yet fully implemented |
   | NSpcData | Player-related animation kits | Format not yet fully implemented |
 
@@ -45,7 +46,6 @@
   | NStgData | 3D Models |
   | NStgeData | 3D VFX models |
   | NStuData | Map configs |
-  | NSeffData | VFX configs |
   | NStsData | — |
   | NStkData | — |
   | NSemData | — |

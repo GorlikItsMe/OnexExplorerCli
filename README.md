@@ -19,7 +19,7 @@ OnexExplorerCli is an open-source command-line tool for unpacking and repacking 
 
 - **List entries** — display the entry table of any .NOS archive with type, size, and compression info; JSON output via `--json`
 - **Show entry details** — detailed information about individual entries; JSON output via `--json`
-- **Extract entries** — decompress/decrypt entries to disk; images are auto-converted to PNG
+- **Extract entries** — decompress/decrypt entries to disk; images are auto-converted to PNG, sprite payloads to one PNG per frame (plus a sidecar JSON), and sprite info / effect definitions to JSON
 - **Download from CDN** — fetch .NOS archives directly from the Gameforge CDN with SHA1 verification
 
 
@@ -37,6 +37,11 @@ OnexExplorerCli is an open-source command-line tool for unpacking and repacking 
 | NStpeData | Effect textures |
 | NStpuData | UI textures |
 | NStcData | Map grids |
+| NSmnData | Mob-related sprite infos (CCINF V1.20) |
+| NSpnData | Player-related sprite infos (CCINF V1.20) |
+| NSmpData | Monster-related sprites |
+| NSppData | Player-related sprites |
+| NSeffData | VFX configs (effect definitions) |
 
 ## Unsupported or partially supported .NOS file formats
 
@@ -44,16 +49,11 @@ The following archives are **not yet supported**:
 
 | Archive name | Description |
 |---|---|
-| NSmpData | Monster-related sprites |
-| NSppData | Player-related sprites |
-| NSmnData | Mob-related sprite infos |
-| NSpnData | Player-related sprite infos |
 | NSmcData | Monster-related animation kits |
 | NSpcData | Player-related animation kits |
 | NStgData | 3D Models |
 | NStgeData | 3D VFX models |
 | NStuData | Map configs |
-| NSeffData | VFX configs |
 | NStsData | — |
 | NStkData | — |
 | NSemData | — |
@@ -107,7 +107,7 @@ OnexExplorerCli download -o ./downloads --build-id 12345 --all
 
 ### extract — extract entries from a .NOS archive
 
-Reads a .NOS archive and extracts entries to disk. Image entries (Texture, Icon, Image4B, TileGrid) are automatically converted to PNG.
+Reads a .NOS archive and extracts entries to disk. Image entries (Texture, Icon, Image4B, TileGrid) are automatically converted to PNG. Sprite payloads (NSmpData/NSppData) produce one PNG per frame plus a `<name>.json` sidecar with frame metadata (width/height/xOrigin/yOrigin); sprite info (NSmnData/NSpnData) and effect definitions (NSeffData) are decoded to JSON. Entries whose type cannot be decoded yet are written raw.
 
 | Option               | Description                                        |
 |----------------------|----------------------------------------------------|
