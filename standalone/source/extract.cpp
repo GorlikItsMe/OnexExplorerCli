@@ -81,14 +81,16 @@ namespace onex::cli {
       const bool is_sprite_info = entry.type == onex::archive::EntryType::SpriteInfo;
       const bool is_sprite = entry.type == onex::archive::EntryType::Sprite;
 
-      auto out_name = entry.name;
+      const auto out_name = entry.name;
+      std::string out_ext;  // raw output keeps the entry name unchanged
       const uint8_t* write_data = data.value.data();
       auto write_size = data.value.size();
 
-      // Writes one output file, creating the parent directory as needed.
-      const auto write_output
-          = [&](const std::string& name, const uint8_t* bytes, size_t size) -> bool {
-        auto out_path = std::filesystem::path(output_dir) / name;
+      // Writes one output file (name + extension), creating the parent
+      // directory as needed.
+      const auto write_output = [&](const std::string& name, const std::string& ext,
+                                    const uint8_t* bytes, size_t size) -> bool {
+        auto out_path = std::filesystem::path(output_dir) / (name + ext);
         std::error_code ec;
         if (!std::filesystem::is_directory(out_path.parent_path(), ec)) {
           if (!std::filesystem::create_directories(out_path.parent_path(), ec) && ec) {
@@ -108,32 +110,29 @@ namespace onex::cli {
         out.write(reinterpret_cast<const char*>(bytes), static_cast<std::streamsize>(size));
 
         std::lock_guard lk(cout_mutex);
-        std::cout << "Extracted " << name << " (" << size << " bytes)\n";
+        std::cout << "Extracted " << name + ext << " (" << size << " bytes)\n";
         return true;
       };
 
-      // Writes a decoded entry as pretty-printed JSON; on I/O failure the
-      // whole entry fails (callers return its result).
+      // Writes a decoded entry as pretty-printed JSON.
       const auto write_json = [&](nlohmann::json&& doc) -> bool {
         auto json_text = std::move(doc).dump(2);
-        out_name += ".json";
-        return write_output(out_name, reinterpret_cast<const uint8_t*>(json_text.data()),
+        return write_output(out_name, ".json", reinterpret_cast<const uint8_t*>(json_text.data()),
                             json_text.size());
       };
 
       if (is_image) {
         auto png = onex::archive::decode_entry_to_png(data.value, entry.type);
         if (png) {
-          out_name += ".png";
-          return write_output(out_name, png.value.data(), png.value.size());
+          return write_output(out_name, ".png", png.value.data(), png.value.size());
         }
-        out_name += ".bin";
+        out_ext = ".bin";
       } else if (is_effect) {
         auto doc = onex::archive::decode_effect_definition(data.value);
         if (doc) {
           return write_json(std::move(doc.value));
         }
-        out_name += ".bin";
+        out_ext = ".bin";
       } else if (is_sprite_info) {
         // CCINF archives are either NSmnData (monster sprites) or NSpnData
         // (player sprites); the variant decides how the header is decoded.
@@ -144,7 +143,7 @@ namespace onex::cli {
         if (doc) {
           return write_json(std::move(doc.value));
         }
-        out_name += ".bin";
+        out_ext = ".bin";
       } else if (is_sprite) {
         auto frames = onex::archive::decode_sprite_frames(data.value);
         if (frames) {
@@ -158,7 +157,7 @@ namespace onex::cli {
                         << " failed to encode\n";
               return false;
             }
-            if (!write_output(out_name + "_" + std::to_string(i) + ".png", png.value.data(),
+            if (!write_output(out_name + "_" + std::to_string(i), ".png", png.value.data(),
                               png.value.size())) {
               return false;
             }
@@ -172,10 +171,10 @@ namespace onex::cli {
           }
           return write_json(std::move(meta));
         }
-        out_name += ".bin";
+        out_ext = ".bin";
       }
 
-      return write_output(out_name, write_data, write_size);
+      return write_output(out_name, out_ext, write_data, write_size);
     });
 
     if (!failed_indices.empty()) {
