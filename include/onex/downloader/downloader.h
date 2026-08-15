@@ -51,6 +51,12 @@ namespace onex::downloader {
     auto resolve(const std::vector<BuildInfoEntry>& entries, const std::string& name)
         -> Result<BuildInfoEntry>;
 
+    /// Resolve a glob pattern against a manifest into all matching entries.
+    /// Supports '*' and '?' wildcards, matched case-insensitively against the
+    /// file field and the bare filename. Returns kEntryNotFound if nothing matches.
+    auto resolve_pattern(const std::vector<BuildInfoEntry>& entries, const std::string& pattern)
+        -> Result<std::vector<BuildInfoEntry>>;
+
     /// Download a single file and verify its SHA1.
     /// Skips if a file with a matching SHA1 already exists.
     auto download_file(const BuildInfoEntry& entry, const std::string& target_dir)

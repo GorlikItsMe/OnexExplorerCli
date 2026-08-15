@@ -29,7 +29,9 @@ auto main(int argc, char** argv) -> int {
   download->add_option("-j,--jobs", jobs, "Number of download threads (4 = default, max 8)")
       ->capture_default_str()
       ->check(CLI::Range(1, 8));
-  download->add_option("archive-names", archive_names, "Archive names from the Gameforge manifest")
+  download
+      ->add_option("archive-names", archive_names,
+                   "Archive names or glob patterns from the Gameforge manifest")
       ->expected(-1);
 
   // extract subcommand
