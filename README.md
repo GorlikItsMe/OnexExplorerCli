@@ -87,19 +87,22 @@ OnexExplorerCli info <file> [--entry <ids...>] [--json]
 
 Fetches `.NOS` archive files from the Gameforge CDN. Downloads the patch manifest, resolves each archive name against it, and streams the file to disk with SHA1 verification.
 
-| Option                 | Description                                          |
-|------------------------|------------------------------------------------------|
-| `-o, --output <dir>`   | Target directory for downloaded files (required)     |
-| `--build-id <id>`      | Build version to fetch from (default: `latest`)      |
-| `--all`                | Download all archives in the manifest                |
-| `archive-names...`     | One or more archive names from the manifest          |
+| Option                 | Description                                                 |
+|------------------------|-------------------------------------------------------------|
+| `-o, --output <dir>`   | Target directory for downloaded files (required)            |
+| `--build-id <id>`      | Build version to fetch from (default: `latest`)             |
+| `--all`                | Download all archives in the manifest                       |
+| `archive-names...`     | One or more archive names or glob patterns from the manifest |
 
-Resolution tries an exact `file`-field match first, then falls back to a bare filename match. An error is reported if a name matches more than one manifest entry. Files already present on disk with a matching SHA1 are skipped.
+Resolution tries an exact `file`-field match first, then falls back to a bare filename match. Names containing a `*` or `?` wildcard are treated as case-insensitive glob patterns matched against the `file` field and the bare filename, so whole archive families can be fetched at once (e.g. `"NostaleData\NStpData*.NOS"`). An error is reported if a name matches more than one manifest entry or a pattern matches nothing. Files already present on disk with a matching SHA1 are skipped.
 
 **Examples:**
 ```bash
 # Download specific archives
 OnexExplorerCli download -o ./downloads NSipData.NOS NostaleData\\NSipData.NOS
+
+# Download all locale/chunk archives matching a glob pattern
+OnexExplorerCli download -o ./downloads "NostaleData\\NSlangData_*.NOS"
 
 # Download all archives from a specific build
 OnexExplorerCli download -o ./downloads --build-id 12345 --all

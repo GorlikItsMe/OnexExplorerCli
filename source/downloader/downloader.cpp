@@ -51,6 +51,43 @@ namespace onex::downloader {
       return bare_filename(entry.file) == name;
     }
 
+    auto ascii_lower(char c) -> char {
+      if (c >= 'A' && c <= 'Z') {
+        return static_cast<char>(c - 'A' + 'a');
+      }
+      return c;
+    }
+
+    auto char_matches(char c, char p) -> bool { return ascii_lower(c) == ascii_lower(p); }
+
+    // Case-insensitive wildcard match supporting '*' and '?'.
+    auto glob_match(const std::string& text, const std::string& pattern) -> bool {
+      std::size_t ti = 0;
+      std::size_t pi = 0;
+      std::size_t star_ti = std::string::npos;
+      std::size_t star_pi = std::string::npos;
+
+      while (ti < text.size()) {
+        if (pi < pattern.size() && (pattern[pi] == '?' || char_matches(text[ti], pattern[pi]))) {
+          ++ti;
+          ++pi;
+        } else if (pi < pattern.size() && pattern[pi] == '*') {
+          star_ti = ti;
+          star_pi = pi++;
+        } else if (star_pi != std::string::npos) {
+          ti = ++star_ti;
+          pi = star_pi + 1;
+        } else {
+          return false;
+        }
+      }
+
+      while (pi < pattern.size() && pattern[pi] == '*') {
+        ++pi;
+      }
+      return pi == pattern.size();
+    }
+
   }  // namespace
 
   struct GameforgeDownloader::Impl {
@@ -99,6 +136,24 @@ namespace onex::downloader {
     }
 
     return Result<BuildInfoEntry>{{}, Error::kEntryNotFound};
+  }
+
+  auto GameforgeDownloader::resolve_pattern(const std::vector<BuildInfoEntry>& entries,
+                                            const std::string& pattern)
+      -> Result<std::vector<BuildInfoEntry>> {
+    std::vector<BuildInfoEntry> matched;
+    for (const auto& entry : entries) {
+      if (entry.folder || entry.file.empty()) {
+        continue;
+      }
+      if (glob_match(entry.file, pattern) || glob_match(bare_filename(entry.file), pattern)) {
+        matched.push_back(entry);
+      }
+    }
+    if (matched.empty()) {
+      return Result<std::vector<BuildInfoEntry>>{{}, Error::kEntryNotFound};
+    }
+    return Result<std::vector<BuildInfoEntry>>{std::move(matched), Error::kNone};
   }
 
   auto GameforgeDownloader::download_file(const BuildInfoEntry& entry,

@@ -118,6 +118,81 @@ TEST_CASE("resolve does not auto-append .NOS") {
   CHECK(r.error == onex::Error::kEntryNotFound);
 }
 
+TEST_CASE("resolve_pattern matches file field wildcards") {
+  auto d = makeDownloader();
+  std::vector<BuildInfoEntry> entries = {
+      makeEntry("NostaleData\\NStpData00.NOS"),
+      makeEntry("NostaleData\\NStpData01.NOS"),
+      makeEntry("NostaleData\\NStpData1F.NOS"),
+      makeEntry("NostaleData\\NSipData.NOS"),
+  };
+
+  auto r = d.resolve_pattern(entries, "NostaleData\\NStpData*.NOS");
+  REQUIRE(r);
+  REQUIRE(r.value.size() == 3);
+}
+
+TEST_CASE("resolve_pattern matches bare filename wildcards") {
+  auto d = makeDownloader();
+  std::vector<BuildInfoEntry> entries = {
+      makeEntry("NostaleData\\NSlangData_DE.NOS"),
+      makeEntry("NostaleData\\NSlangData_EN.NOS"),
+      makeEntry("NostaleData\\NSlangData_FR.NOS"),
+      makeEntry("NostaleData\\NSipData.NOS"),
+  };
+
+  auto r = d.resolve_pattern(entries, "NSlangData_??.NOS");
+  REQUIRE(r);
+  REQUIRE(r.value.size() == 3);
+}
+
+TEST_CASE("resolve_pattern matches case-insensitively") {
+  auto d = makeDownloader();
+  std::vector<BuildInfoEntry> entries = {
+      makeEntry("NostaleData\\NSmpData00.NOS"),
+  };
+
+  auto r = d.resolve_pattern(entries, "nostaledata\\nsmpdata00.nos");
+  REQUIRE(r);
+  REQUIRE(r.value.size() == 1);
+}
+
+TEST_CASE("resolve_pattern supports case-insensitive '?' and '*'") {
+  auto d = makeDownloader();
+  std::vector<BuildInfoEntry> entries = {
+      makeEntry("NostaleData\\NSmpData00.NOS"),
+      makeEntry("NostaleData\\NSmpData01.NOS"),
+      makeEntry("NostaleData\\NSmpData1F.NOS"),
+  };
+
+  auto r = d.resolve_pattern(entries, "?SmpData*.nos");
+  REQUIRE(r);
+  CHECK(r.value.size() == 3);
+}
+
+TEST_CASE("resolve_pattern reports not found when nothing matches") {
+  auto d = makeDownloader();
+  std::vector<BuildInfoEntry> entries = {
+      makeEntry("NostaleData\\NSipData.NOS"),
+  };
+
+  auto r = d.resolve_pattern(entries, "NStpData*.NOS");
+  CHECK_FALSE(r);
+  CHECK(r.error == onex::Error::kEntryNotFound);
+}
+
+TEST_CASE("resolve_pattern ignores folder entries") {
+  auto d = makeDownloader();
+  BuildInfoEntry folder;
+  folder.file = "NostaleData";
+  folder.folder = true;
+  std::vector<BuildInfoEntry> entries = {folder};
+
+  auto r = d.resolve_pattern(entries, "NostaleData");
+  CHECK_FALSE(r);
+  CHECK(r.error == onex::Error::kEntryNotFound);
+}
+
 TEST_CASE("download_batch with all folders returns all-skipped") {
   auto d = makeDownloader();
   BuildInfoEntry folder_entry;

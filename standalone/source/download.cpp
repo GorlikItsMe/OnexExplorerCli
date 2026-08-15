@@ -54,6 +54,10 @@ namespace onex::cli {
       std::cout << "    " << std::flush;  // trailing spaces to erase previous
     }
 
+    auto is_glob_pattern(const std::string& name) -> bool {
+      return name.find_first_of("*?") != std::string::npos;
+    }
+
   }  // namespace
 
   auto run_download(const std::string& output_dir, const std::string& build_id,
@@ -83,13 +87,33 @@ namespace onex::cli {
     std::vector<onex::downloader::BuildInfoEntry> resolved;
     resolved.reserve(names.size());
 
-    for (const auto& name : names) {
-      auto r = downloader.resolve(manifest.value.entries, name);
-      if (!r) {
-        std::cerr << "OnexExplorerCli: error: " << name << ": " << error_text(r.error) << "\n";
-        continue;
+    auto push_unique = [&resolved](const onex::downloader::BuildInfoEntry& entry) {
+      for (const auto& e : resolved) {
+        if (e.file == entry.file) {
+          return;
+        }
       }
-      resolved.push_back(r.value);
+      resolved.push_back(entry);
+    };
+
+    for (const auto& name : names) {
+      if (is_glob_pattern(name)) {
+        auto r = downloader.resolve_pattern(manifest.value.entries, name);
+        if (!r) {
+          std::cerr << "OnexExplorerCli: error: " << name << ": " << error_text(r.error) << "\n";
+          continue;
+        }
+        for (const auto& entry : r.value) {
+          push_unique(entry);
+        }
+      } else {
+        auto r = downloader.resolve(manifest.value.entries, name);
+        if (!r) {
+          std::cerr << "OnexExplorerCli: error: " << name << ": " << error_text(r.error) << "\n";
+          continue;
+        }
+        push_unique(r.value);
+      }
     }
 
     if (resolved.empty()) {
