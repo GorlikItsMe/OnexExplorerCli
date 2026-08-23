@@ -58,9 +58,13 @@ namespace onex::archive {
       const int y_origin = read_i16_le(desc + 6);
       const size_t pixel_offset = read_u32_le(desc + 8);
 
-      if (width <= 0 || height <= 0) {
-        return {{}, Error::kInvalidFormat};
+      // Zero-sized descriptors mark unused frame slots (seen as trailing
+      // terminators and leading placeholders in NSmpData04); they store no
+      // pixels and cannot be encoded as PNGs, so they are skipped.
+      if (width == 0 || height == 0) {
+        continue;
       }
+
       const size_t pixel_bytes = static_cast<size_t>(width) * 2 * static_cast<size_t>(height);
       if (pixel_offset > data.size() || pixel_bytes > data.size() - pixel_offset) {
         return {{}, Error::kInvalidFormat};

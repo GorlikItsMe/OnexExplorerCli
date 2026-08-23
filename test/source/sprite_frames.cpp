@@ -123,6 +123,40 @@ TEST_CASE("decode_sprite_frames treats a zero-frame entry as empty") {
   CHECK(frames.value.empty());
 }
 
+TEST_CASE("decode_sprite_frames skips a trailing unused frame slot") {
+  // Trailing zero-sized terminator, as seen in NSmpData04 entry 4117.
+  std::vector<uint8_t> data{2,                                                // frame count
+                            0x02, 0x00, 0x02, 0x00, 0x01, 0x00,               // w=2 h=2 x=1
+                            0x01, 0x00, 0x19, 0x00, 0x00, 0x00,               // y=1 offset=25
+                            0x00, 0x00, 0x00, 0x00, 0x00, 0x00,               // w=0 h=0 x=0
+                            0x00, 0x00, 0x21, 0x00, 0x00, 0x00,               // y=0 offset=33 (end)
+                            0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88};  // 2x2 pixels
+  auto frames = decode_sprite_frames(data);
+  REQUIRE(frames);
+  REQUIRE(frames.value.size() == 1);
+  CHECK(frames.value[0].width == 2);
+  CHECK(frames.value[0].height == 2);
+  CHECK(frames.value[0].x_origin == 1);
+  CHECK(frames.value[0].y_origin == 1);
+  CHECK(frames.value[0].rgba.size() == 2u * 2 * 4);
+}
+
+TEST_CASE("decode_sprite_frames skips a leading unused frame slot") {
+  // Leading zero-sized placeholder, as seen in NSmpData04 entry 4621.
+  std::vector<uint8_t> data{2,                                                // frame count
+                            0x00, 0x00, 0x00, 0x00, 0x00, 0x00,               // w=0 h=0 x=0
+                            0x00, 0x00, 0x19, 0x00, 0x00, 0x00,               // y=0 offset=25
+                            0x02, 0x00, 0x02, 0x00, 0x01, 0x00,               // w=2 h=2 x=1
+                            0x01, 0x00, 0x19, 0x00, 0x00, 0x00,               // y=1 offset=25
+                            0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88};  // 2x2 pixels
+  auto frames = decode_sprite_frames(data);
+  REQUIRE(frames);
+  REQUIRE(frames.value.size() == 1);
+  CHECK(frames.value[0].width == 2);
+  CHECK(frames.value[0].height == 2);
+  CHECK(frames.value[0].rgba.size() == 2u * 2 * 4);
+}
+
 TEST_CASE("decode_sprite_frames decodes the first entries of NSppData0B") {
   auto path = ensure_fixture("NostaleData\\NSppData0B.NOS");
   auto opened = onex::archive::NosArchive::open(path);

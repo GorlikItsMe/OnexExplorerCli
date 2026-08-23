@@ -24,6 +24,9 @@ namespace onex::archive {
   /// offset(u32)} followed (at `offset`) by GBAR4444 pixels
   /// (`width*2*height` bytes), converted to RGBA8.
   ///
+  /// Descriptors with a zero width or height are unused frame slots (no
+  /// pixels, no PNG representation) and are skipped.
+  ///
   /// @return The decoded frames, or kInvalidFormat if the entry is truncated
   ///         or a frame's pixels extend past the end of the entry.
   auto decode_sprite_frames(std::span<const uint8_t> data) -> Result<std::vector<SpriteFrame>>;
