@@ -101,6 +101,11 @@
             </dt>
             <dd></dd>
             <dt>
+              <span class="m-doc-wrap-bumper">auto <a href="#a27543b8bbd22ed32b5c7f7494c3fd39c" class="m-doc">resolve_pattern</a>(</span><span class="m-doc-wrap">const std::vector&lt;<a href="structonex_1_1downloader_1_1BuildInfoEntry.html" class="m-doc">BuildInfoEntry</a>&gt;&amp; entries,
+              const std::string&amp; pattern) -&gt; <a href="structonex_1_1Result.html" class="m-doc">Result</a>&lt;std::vector&lt;<a href="structonex_1_1downloader_1_1BuildInfoEntry.html" class="m-doc">BuildInfoEntry</a>&gt;&gt;</span>
+            </dt>
+            <dd></dd>
+            <dt>
               <span class="m-doc-wrap-bumper">auto <a href="#a6c4792c047f536389aa3b8730b0e4c37" class="m-doc">download_file</a>(</span><span class="m-doc-wrap">const <a href="structonex_1_1downloader_1_1BuildInfoEntry.html" class="m-doc">BuildInfoEntry</a>&amp; entry,
               const std::string&amp; target_dir) -&gt; <a href="structonex_1_1Result.html" class="m-doc">Result</a>&lt;<a href="namespaceonex_1_1downloader.html#ace7907da728cbfcc39d6037ae045734c" class="m-doc">FileStatus</a>&gt;</span>
             </dt>
@@ -156,6 +161,13 @@
               const std::string&amp; name)</span></span>
             </h3>
 <p>Resolve an archive name against a manifest into a single entry. Tries exact file-field match first, then bare filename fallback. Returns kAmbiguousMatch if more than one entry matches.</p>
+          </div></section>
+          <section class="m-doc-details" id="a27543b8bbd22ed32b5c7f7494c3fd39c"><div>
+            <h3>
+              <span class="m-doc-wrap-bumper"><a href="structonex_1_1Result.html" class="m-doc">Result</a>&lt;std::vector&lt;<a href="structonex_1_1downloader_1_1BuildInfoEntry.html" class="m-doc">BuildInfoEntry</a>&gt;&gt; onex::<wbr />downloader::<wbr />GameforgeDownloader::<wbr /></span><span class="m-doc-wrap"><span class="m-doc-wrap-bumper"><a href="#a27543b8bbd22ed32b5c7f7494c3fd39c" class="m-doc-self">resolve_pattern</a>(</span><span class="m-doc-wrap">const std::vector&lt;<a href="structonex_1_1downloader_1_1BuildInfoEntry.html" class="m-doc">BuildInfoEntry</a>&gt;&amp; entries,
+              const std::string&amp; pattern)</span></span>
+            </h3>
+<p>Resolve a glob pattern against a manifest into all matching entries. Supports &#x27;*&#x27; and &#x27;?&#x27; wildcards, matched case-insensitively against the file field and the bare filename. Returns kEntryNotFound if nothing matches.</p>
           </div></section>
           <section class="m-doc-details" id="a6c4792c047f536389aa3b8730b0e4c37"><div>
             <h3>
