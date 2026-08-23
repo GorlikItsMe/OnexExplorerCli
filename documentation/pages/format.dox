@@ -177,7 +177,9 @@
   ```
 
   At `offset` the frame stores `width*2*height` bytes of GBAR4444 pixels
-  (2 bytes per pixel, little-endian ARGB nibbles). During extraction the
+  (2 bytes per pixel, little-endian ARGB nibbles). Descriptors with a zero
+  width or height are unused frame slots (e.g. trailing terminators); they
+  store no pixels and are skipped during extraction. During extraction the
   pixels are converted to RGBA8 and encoded to PNG (one file per frame), with
   a sidecar `<name>.json` holding the frame metadata
   (width, height, xOrigin, yOrigin).
