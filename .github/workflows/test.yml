@@ -40,7 +40,7 @@ jobs:
       - uses: actions/cache@v3
         with:
           path: "**/cpm_modules"
-          key: ${{ github.workflow }}-cpm-${{ matrix.os }}-${{ hashFiles('**/CMakeLists.txt', '**/*.cmake') }}
+          key: ${{ github.workflow }}-cpm-${{ matrix.os }}-${{ hashFiles('**/CMakeLists.txt', '**/*.cmake', 'wasm/CMakeLists.txt') }}
 
       - name: Cache vcpkg
         if: matrix.vcpkg_triplet != ''
@@ -72,3 +72,38 @@ jobs:
 
       - name: build standalone
         run: cmake --build build-standalone --config Release -j4
+
+      # TypeScript / WASM library (ubuntu only)
+      - name: Setup Node.js
+        if: matrix.os == 'ubuntu-latest'
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: "npm"
+          cache-dependency-path: wasm/package-lock.json
+
+      - name: Setup Emscripten
+        if: matrix.os == 'ubuntu-latest'
+        uses: mymindstorm/setup-emsdk@v14
+        with:
+          version: "3.1.73"
+
+      - name: Install npm dependencies
+        if: matrix.os == 'ubuntu-latest'
+        run: npm ci
+        working-directory: wasm
+
+      - name: Build WASM module
+        if: matrix.os == 'ubuntu-latest'
+        run: npm run build
+        working-directory: wasm
+
+      - name: TypeScript typecheck
+        if: matrix.os == 'ubuntu-latest'
+        run: npm run typecheck
+        working-directory: wasm
+
+      - name: Run TypeScript tests
+        if: matrix.os == 'ubuntu-latest'
+        run: npm test
+        working-directory: wasm
